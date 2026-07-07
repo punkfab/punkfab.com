@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PUNKFAB — software-defined fabrication</title>
-<meta name="description" content="Manufacturing that runs like software. Define a part in code, simulate it, then robot cells build it for real — and verify every build against the CAD." />
+<meta name="description" content="Manufacturing that runs like software. Define a part in code, sweep hundreds of variants in simulation, and verify every build against the CAD before robot cells build it for real. Manufacturing for Design." />
 <meta property="og:title" content="PUNKFAB — software-defined fabrication" />
-<meta property="og:description" content="Manufacturing that runs like software. Define, simulate, verify, build." />
+<meta property="og:description" content="Don't design a part — sweep a space. Manufacturing for Design: define, sweep, verify, build." />
 <meta property="og:type" content="website" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -166,6 +166,40 @@
   .reveal{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease}
   .reveal.in{opacity:1; transform:none}
 
+  /* manufacturing-for-design + sweep */
+  .inv{font-family:var(--f-display); font-weight:600; font-size:clamp(22px,3.8vw,34px);
+      line-height:1.25; margin:0 0 4px; max-width:780px}
+  .inv .m{color:var(--magenta)} .inv .c{color:var(--cyan)}
+  .lede2{color:var(--muted); font-size:16.5px; max-width:640px; margin:18px 0 34px}
+  .lede2 b{color:var(--ink); font-weight:500}
+  .sweep{border:1px solid var(--line); border-radius:6px; padding:18px; background:var(--panel)}
+  .sweep-cap{font-family:var(--f-mono); font-size:11.5px; color:var(--dim); letter-spacing:.06em;
+      margin:0 0 14px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+  .sweep-cap .pk{color:var(--green)} .sweep-cap .fk{color:var(--muted)}
+  .chips{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+  .chip{font-family:var(--f-mono); font-size:12px; padding:12px 11px; border-radius:3px;
+      display:flex; align-items:center; justify-content:space-between; gap:8px; border:1px solid var(--line)}
+  .chip .s{font-weight:700}
+  .chip.pass{color:var(--green); border-color:rgba(57,255,158,.35); background:rgba(57,255,158,.06)}
+  .chip.pass .s{color:var(--green)}
+  .chip.fail{color:var(--dim); background:rgba(255,45,149,.035); border-color:rgba(255,45,149,.12)}
+  .chip.fail .s{color:var(--magenta); opacity:.65}
+
+  /* lexicon */
+  .lex{display:flex; flex-direction:column; gap:1px; background:var(--line);
+      border:1px solid var(--line); border-radius:6px; overflow:hidden}
+  .lex-row{display:grid; grid-template-columns:132px 1fr; gap:20px; background:var(--bg); padding:22px}
+  .lex-tier{font-family:var(--f-mono); font-size:11px; letter-spacing:.22em; color:var(--magenta);
+      text-transform:uppercase; padding-top:4px}
+  .lex-row h3{font-family:var(--f-display); font-weight:600; font-size:19px; margin:0 0 5px; color:var(--ink)}
+  .lex-row.trust h3,.lex-row.guar h3{color:var(--green)}
+  .lex-row.trust .lex-tier,.lex-row.guar .lex-tier{color:var(--green)}
+  .lex-row p{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); margin:0; line-height:1.7}
+
+  @media(max-width:760px){
+    .chips{grid-template-columns:repeat(3,1fr)}
+    .lex-row{grid-template-columns:1fr; gap:7px}
+  }
   @media(max-width:760px){
     .pipe{grid-template-columns:1fr} .grid{grid-template-columns:1fr}
     body::after{display:none}
@@ -262,6 +296,41 @@
   </div>
 </section>
 
+<section id="sweeps">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-tag">manufacturing for design</span>
+      <h2>Don't design a part. Sweep a space.</h2>
+    </div>
+    <p class="inv reveal">Design <span class="m">for</span> Manufacturing bends the design to fit the machine.<br>
+      We bend the <span class="c">machine</span> to fit the design.</p>
+    <p class="lede2 reveal">When simulate-and-verify costs almost nothing, you stop guessing a single part
+      and <b>sweep a whole family</b> — every variant built and checked in software, the constraints
+      picking the survivor. You don't hit a spec; you <b>map the envelope</b> around it. Something
+      traditional shops can't afford, because there each try burns a real tool and a real setup.</p>
+    <div class="sweep reveal">
+      <p class="sweep-cap">
+        <span>sweep · omni-wheel roller pitch × gap · interference-verified</span>
+        <span><span class="pk">■ verified</span>&nbsp;&nbsp;<span class="fk">■ rejected</span></span>
+      </p>
+      <div class="chips">
+        <div class="chip fail">r18·g8 <span class="s">✕</span></div>
+        <div class="chip fail">r18·g10 <span class="s">✕</span></div>
+        <div class="chip fail">r18·g12 <span class="s">✕</span></div>
+        <div class="chip fail">r20·g8 <span class="s">✕</span></div>
+        <div class="chip fail">r20·g10 <span class="s">✕</span></div>
+        <div class="chip pass">r20·g12 <span class="s">✓</span></div>
+        <div class="chip fail">r21·g8 <span class="s">✕</span></div>
+        <div class="chip pass">r21·g10 <span class="s">✓</span></div>
+        <div class="chip pass">r21·g12 <span class="s">✓</span></div>
+        <div class="chip pass">r22·g8 <span class="s">✓</span></div>
+        <div class="chip pass">r22·g10 <span class="s">✓</span></div>
+        <div class="chip pass">r22·g12 <span class="s">✓</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="band">
   <div class="wrap reveal">
     <p class="big">The simulation is a <span class="m">cache</span> of <span class="c">reality</span>.</p>
@@ -269,6 +338,35 @@
       hardware, stamped with how fresh it is, and re-checked before it's trusted. <b>A green build
       means a good part, not a hopeful one.</b></p>
     <span class="stamp"><span class="d"></span> calibration: FRESH · 0 stale parameters</span>
+  </div>
+</section>
+
+<section id="lexicon">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-tag">the lexicon</span>
+      <h2>New words for a new loop.</h2>
+    </div>
+    <div class="lex reveal">
+      <div class="lex-row"><span class="lex-tier">Spine</span>
+        <div><h3>Manufacturing for Design</h3>
+          <p>The inversion of DFM. The factory is a subroutine of your design search, not a constraint you contort around.</p></div></div>
+      <div class="lex-row"><span class="lex-tier">Philosophy</span>
+        <div><h3>Design as Search</h3>
+          <p>You don't draw a part — you search a space, and the winner is verified, not asserted.</p></div></div>
+      <div class="lex-row"><span class="lex-tier">Method</span>
+        <div><h3>Sweep the envelope</h3>
+          <p>Explore hundreds of variants for almost nothing and map the whole feasible region — the edge a traditional shop can't afford to find.</p></div></div>
+      <div class="lex-row"><span class="lex-tier">Discipline</span>
+        <div><h3>Test-Driven Fabrication</h3>
+          <p>Write the constraint first. The fab converges until the build goes green.</p></div></div>
+      <div class="lex-row trust"><span class="lex-tier">Trust</span>
+        <div><h3>The simulation is a cache of reality</h3>
+          <p>Every parameter is measured on real hardware, stamped for freshness, and re-checked before it's trusted.</p></div></div>
+      <div class="lex-row guar"><span class="lex-tier">Guarantee</span>
+        <div><h3>Verified by construction</h3>
+          <p>Some constraints aren't checked after the fact — they're made impossible to violate by how the part is built.</p></div></div>
+    </div>
   </div>
 </section>
 
@@ -285,7 +383,7 @@
 <footer>
   <div class="wrap">
     <div class="brand">PUNK<b>FAB</b></div>
-    <span>software-defined fabrication · define · simulate · verify · build</span>
+    <span>manufacturing for design · define · sweep · verify · build</span>
   </div>
 </footer>
 
