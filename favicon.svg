@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#07070d"/>
+  <rect x="4" y="4" width="56" height="56" rx="10" fill="none" stroke="#00e5ff" stroke-opacity=".25"/>
+  <!-- P monogram in neon magenta with a cyan cut -->
+  <path d="M20 16 h16 a11 11 0 0 1 0 22 h-9 v10 h-7 z M27 24 v7 h9 a3.5 3.5 0 0 0 0-7 z"
+        fill="#ff2d95"/>
+  <rect x="20" y="44" width="24" height="4" fill="#00e5ff"/>
+</svg>

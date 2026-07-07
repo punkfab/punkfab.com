@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PUNKFAB — software-defined fabrication</title>
+<meta name="description" content="Manufacturing that runs like software. Define a part in code, simulate it, then robot cells build it for real — and verify every build against the CAD." />
+<meta property="og:title" content="PUNKFAB — software-defined fabrication" />
+<meta property="og:description" content="Manufacturing that runs like software. Define, simulate, verify, build." />
+<meta property="og:type" content="website" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#07070d; --bg2:#0c0c16; --panel:rgba(255,255,255,.025);
+    --ink:#e9eaf5; --muted:#8b8da8; --dim:#5a5c78;
+    --magenta:#ff2d95; --cyan:#00e5ff; --green:#39ff9e;
+    --line:rgba(0,229,255,.10); --grid:rgba(120,140,255,.045);
+    --f-display:"Chakra Petch",system-ui,sans-serif;
+    --f-body:"Space Grotesk",system-ui,sans-serif;
+    --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--f-body); line-height:1.55; -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* ambient: blueprint grid + magenta/cyan glow, behind everything */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(900px 600px at 12% -5%, rgba(255,45,149,.16), transparent 60%),
+      radial-gradient(1000px 700px at 100% 0%, rgba(0,229,255,.12), transparent 55%),
+      linear-gradient(var(--grid) 1px,transparent 1px) 0 0/44px 44px,
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/44px 44px;
+  }
+  /* scanlines */
+  body::after{
+    content:""; position:fixed; inset:0; z-index:2; pointer-events:none; opacity:.5;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.18) 2px 3px);
+    mix-blend-mode:overlay;
+  }
+  .wrap{position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:0 24px}
+
+  /* ---------- nav ---------- */
+  nav{position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between;
+      max-width:1080px; margin:0 auto; padding:22px 24px}
+  .brand{font-family:var(--f-display); font-weight:700; letter-spacing:.14em; font-size:15px}
+  .brand b{color:var(--magenta)}
+  nav a.nav-cta{font-family:var(--f-mono); font-size:12.5px; color:var(--cyan);
+      text-decoration:none; border:1px solid var(--line); padding:8px 14px; border-radius:2px}
+  nav a.nav-cta:hover{border-color:var(--cyan); box-shadow:0 0 18px rgba(0,229,255,.25)}
+
+  /* ---------- hero ---------- */
+  header{position:relative; padding:70px 0 90px}
+  .eyebrow{font-family:var(--f-mono); font-size:12.5px; letter-spacing:.42em;
+      color:var(--cyan); text-transform:uppercase; margin:0 0 26px}
+  .eyebrow::before{content:"// "}
+  .glitch{
+    font-family:var(--f-display); font-weight:700; letter-spacing:.02em;
+    font-size:clamp(58px,15vw,168px); line-height:.92; margin:0;
+    position:relative; color:var(--ink); text-shadow:0 0 34px rgba(255,45,149,.18);
+  }
+  .glitch::before,.glitch::after{
+    content:attr(data-text); position:absolute; inset:0; clip-path:inset(0);
+  }
+  .glitch::before{color:var(--magenta); transform:translate(-2px,0); mix-blend-mode:screen;
+      animation:gl-a 4.2s infinite steps(2)}
+  .glitch::after{color:var(--cyan); transform:translate(2px,0); mix-blend-mode:screen;
+      animation:gl-b 3.4s infinite steps(2)}
+  @keyframes gl-a{0%,92%,100%{clip-path:inset(0 0 100% 0);opacity:0}
+    93%{clip-path:inset(8% 0 62% 0);opacity:.9;transform:translate(-4px,0)}
+    96%{clip-path:inset(46% 0 22% 0);opacity:.9;transform:translate(3px,0)}}
+  @keyframes gl-b{0%,90%,100%{clip-path:inset(0 0 100% 0);opacity:0}
+    91%{clip-path:inset(30% 0 40% 0);opacity:.8;transform:translate(4px,0)}
+    97%{clip-path:inset(70% 0 8% 0);opacity:.8;transform:translate(-3px,0)}}
+  .tagline{font-family:var(--f-display); font-weight:500; font-size:clamp(20px,3.4vw,30px);
+      margin:26px 0 0; color:var(--ink)}
+  .tagline .b{color:var(--cyan)}
+  .lede{max-width:560px; color:var(--muted); font-size:17px; margin:18px 0 0}
+  .lede b{color:var(--ink); font-weight:500}
+
+  .cta-row{display:flex; flex-wrap:wrap; gap:14px; margin-top:34px}
+  .btn{font-family:var(--f-mono); font-size:13px; letter-spacing:.02em; text-decoration:none;
+      padding:13px 22px; border-radius:2px; display:inline-flex; align-items:center; gap:9px}
+  .btn.primary{background:var(--magenta); color:#0a0110; font-weight:700;
+      box-shadow:0 0 28px rgba(255,45,149,.4)}
+  .btn.primary:hover{box-shadow:0 0 40px rgba(255,45,149,.6)}
+  .btn.ghost{color:var(--ink); border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--cyan); color:var(--cyan)}
+
+  /* ---------- build log (the signature) ---------- */
+  .term{margin-top:52px; border:1px solid var(--line); border-radius:6px; overflow:hidden;
+      background:linear-gradient(180deg,rgba(0,229,255,.03),rgba(255,45,149,.02)); max-width:600px;
+      backdrop-filter:blur(2px)}
+  .term-bar{display:flex; align-items:center; gap:8px; padding:11px 15px;
+      border-bottom:1px solid var(--line); font-family:var(--f-mono); font-size:11.5px; color:var(--dim)}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .term-bar .spacer{flex:1}
+  .term-body{font-family:var(--f-mono); font-size:13px; padding:16px 18px; line-height:1.85}
+  .term-body .cmd{color:var(--ink)} .term-body .cmd .p{color:var(--magenta)}
+  .term-body .row{opacity:0; animation:rowin .5s forwards}
+  .term-body .ok{color:var(--green)} .term-body .run{color:var(--cyan)}
+  .term-body .lbl{color:var(--ink)} .term-body .note{color:var(--dim)}
+  .cursor{display:inline-block;width:8px;height:15px;background:var(--cyan);
+      vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+  @keyframes rowin{to{opacity:1}}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- sections ---------- */
+  section{position:relative; padding:70px 0; border-top:1px solid var(--line)}
+  .sec-head{display:flex; align-items:baseline; gap:16px; margin-bottom:40px; flex-wrap:wrap}
+  .sec-tag{font-family:var(--f-mono); font-size:12px; letter-spacing:.3em; color:var(--magenta); text-transform:uppercase}
+  h2{font-family:var(--f-display); font-weight:600; font-size:clamp(26px,4.2vw,40px);
+      margin:0; letter-spacing:.01em}
+
+  /* pipeline */
+  .pipe{display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:var(--line)}
+  .stage{background:var(--bg); padding:24px 20px; position:relative; min-height:150px}
+  .stage .n{font-family:var(--f-mono); font-size:12px; color:var(--dim); letter-spacing:.15em}
+  .stage h3{font-family:var(--f-display); font-weight:600; font-size:19px; margin:12px 0 8px; color:var(--cyan)}
+  .stage.verify h3{color:var(--green)}
+  .stage p{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); margin:0; line-height:1.7}
+  .stage .bar{position:absolute; left:0; top:0; height:2px; width:0; background:var(--cyan);
+      box-shadow:0 0 12px var(--cyan)}
+  .stage.verify .bar{background:var(--green); box-shadow:0 0 12px var(--green)}
+  .stage.lit .bar{width:100%; transition:width .5s ease}
+
+  /* capabilities */
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .card{border:1px solid var(--line); border-radius:5px; padding:22px; background:var(--panel);
+      transition:border-color .2s, transform .2s}
+  .card:hover{border-color:var(--magenta); transform:translateY(-3px)}
+  .card .k{font-family:var(--f-mono); font-size:11px; letter-spacing:.14em; color:var(--magenta); text-transform:uppercase}
+  .card h3{font-family:var(--f-display); font-weight:600; font-size:18px; margin:12px 0 8px}
+  .card p{font-size:14px; color:var(--muted); margin:0}
+
+  /* cache-of-reality band */
+  .band{border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+      background:linear-gradient(90deg,rgba(255,45,149,.06),rgba(0,229,255,.05))}
+  .band .wrap{padding:74px 24px; max-width:820px}
+  .band .big{font-family:var(--f-display); font-weight:600; font-size:clamp(24px,4.4vw,40px);
+      margin:0; line-height:1.2}
+  .band .big .m{color:var(--magenta)} .band .big .c{color:var(--cyan)}
+  .band p{color:var(--muted); font-size:16.5px; max-width:620px; margin:20px 0 0}
+  .band p b{color:var(--ink); font-weight:500}
+  .stamp{display:inline-flex; align-items:center; gap:8px; margin-top:26px; font-family:var(--f-mono);
+      font-size:12px; color:var(--green); border:1px solid rgba(57,255,158,.3); padding:7px 13px; border-radius:2px}
+  .stamp .d{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+
+  /* contact */
+  .contact{text-align:center}
+  .contact h2{margin-bottom:14px}
+  .contact p{color:var(--muted); max-width:520px; margin:0 auto 30px; font-size:16.5px}
+
+  footer{border-top:1px solid var(--line); padding:34px 0}
+  footer .wrap{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px}
+  footer span{font-family:var(--f-mono); font-size:12px; color:var(--dim); letter-spacing:.05em}
+  footer .brand b{color:var(--magenta)}
+
+  /* reveal on scroll */
+  .reveal{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease}
+  .reveal.in{opacity:1; transform:none}
+
+  @media(max-width:760px){
+    .pipe{grid-template-columns:1fr} .grid{grid-template-columns:1fr}
+    body::after{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important; transition:none!important}
+    .reveal{opacity:1; transform:none} .stage.lit .bar{width:100%}
+    .term-body .row{opacity:1}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">PUNK<b>FAB</b></div>
+  <a class="nav-cta" href="#contact">start a build →</a>
+</nav>
+
+<header>
+  <div class="wrap">
+    <p class="eyebrow">software-defined fabrication</p>
+    <h1 class="glitch" data-text="PUNKFAB">PUNKFAB</h1>
+    <p class="tagline">Manufacturing that runs like <span class="b">software</span>.</p>
+    <p class="lede">Define a part in code. Simulate it until it works. Then robot cells build it
+      for real — and <b>every build is verified against the CAD</b> before it ships.</p>
+
+    <div class="cta-row">
+      <a class="btn primary" href="#contact">Start a build</a>
+      <a class="btn ghost" href="#pipeline">See how it runs ↓</a>
+    </div>
+
+    <div class="term" aria-hidden="true">
+      <div class="term-bar">
+        <span class="dot" style="background:var(--magenta)"></span>
+        <span class="dot" style="background:var(--cyan)"></span>
+        <span class="dot" style="background:var(--green)"></span>
+        <span class="spacer"></span>punkfab · build
+      </div>
+      <div class="term-body" id="log">
+        <div class="row cmd" style="animation-delay:.1s"><span class="p">$</span> punkfab build bracket-v3</div>
+        <div class="row" style="animation-delay:.4s"><span class="ok">✓ defined</span>&nbsp;&nbsp;&nbsp;<span class="note">cad → feature tree</span></div>
+        <div class="row" style="animation-delay:.62s"><span class="ok">✓ simulated</span>&nbsp;<span class="note">physics ok · 0 collisions</span></div>
+        <div class="row" style="animation-delay:.84s"><span class="ok">✓ scheduled</span>&nbsp;<span class="note">3 cells · 52s cycle</span></div>
+        <div class="row" style="animation-delay:1.06s"><span class="ok">✓ toolpath</span>&nbsp;&nbsp;<span class="note">reachable · 0.46mm</span></div>
+        <div class="row" style="animation-delay:1.28s"><span class="run">⟳ building</span>&nbsp;&nbsp;<span class="lbl">cell-02</span> <span class="note">press + glue</span><span class="cursor"></span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="pipeline">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-tag">the pipeline</span>
+      <h2>One path, code to part.</h2>
+    </div>
+    <div class="pipe reveal">
+      <div class="stage"><span class="bar"></span><span class="n">01 / DEFINE</span>
+        <h3>Define</h3><p>Geometry as parametric code. Change a number, regenerate the part.</p></div>
+      <div class="stage"><span class="bar"></span><span class="n">02 / SIMULATE</span>
+        <h3>Simulate</h3><p>Physics sim proves the mechanism and the motion before any metal moves.</p></div>
+      <div class="stage"><span class="bar"></span><span class="n">03 / SCHEDULE</span>
+        <h3>Schedule</h3><p>An operation graph sequences the cells and cuts the cycle time.</p></div>
+      <div class="stage"><span class="bar"></span><span class="n">04 / TOOLPATH</span>
+        <h3>Toolpath</h3><p>CAM turns each step into arm motion, checked for reach and clearance.</p></div>
+      <div class="stage"><span class="bar"></span><span class="n">05 / BUILD</span>
+        <h3>Build</h3><p>Tool-changing robot cells form, cut, press, and assemble the real part.</p></div>
+      <div class="stage verify"><span class="bar"></span><span class="n">06 / VERIFY</span>
+        <h3>Verify</h3><p>The finished part is measured against the CAD. Out of tolerance never ships.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="shop">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-tag">the shop floor</span>
+      <h2>Processes, on tap.</h2>
+    </div>
+    <div class="grid">
+      <div class="card reveal"><span class="k">wire</span><h3>Wire forming</h3>
+        <p>CNC bends from a program. Springback is calibrated per spool, so the first part is right.</p></div>
+      <div class="card reveal"><span class="k">sheet</span><h3>Sheet &amp; foil forming</h3>
+        <p>Fold flat stock into stiff profiles — or layer-form solid parts from cheap foil.</p></div>
+      <div class="card reveal"><span class="k">arms</span><h3>Tool-changing arms</h3>
+        <p>One arm, many tools: shear, press, gripper, glue — swapped in seconds at the dock.</p></div>
+      <div class="card reveal"><span class="k">press</span><h3>Press &amp; insert</h3>
+        <p>A self-reacting C-frame seats bearings and inserts with hundreds of newtons — and the arm feels almost none of it.</p></div>
+      <div class="card reveal"><span class="k">assembly</span><h3>Adhesive &amp; assembly</h3>
+        <p>Two arms coordinate: one holds the joint, the other lays the bead, and holds until it sets.</p></div>
+      <div class="card reveal"><span class="k">lom</span><h3>Layer forming</h3>
+        <p>Stack, bond, and cut sheet into a finished solid — tooling-free, straight from the slice stack.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap reveal">
+    <p class="big">The simulation is a <span class="m">cache</span> of <span class="c">reality</span>.</p>
+    <p>Every parameter — a bend's springback, a press fit, a bead's set time — is measured on real
+      hardware, stamped with how fresh it is, and re-checked before it's trusted. <b>A green build
+      means a good part, not a hopeful one.</b></p>
+    <span class="stamp"><span class="d"></span> calibration: FRESH · 0 stale parameters</span>
+  </div>
+</section>
+
+<section id="contact" class="contact">
+  <div class="wrap reveal">
+    <div class="sec-head" style="justify-content:center"><span class="sec-tag">get in touch</span></div>
+    <h2>Building something that doesn't fit a catalog?</h2>
+    <p>Send us the part, the assembly, or just the problem. If it can be defined, simulated,
+      and built, we want it.</p>
+    <a class="btn primary" href="mailto:hello@punkfab.com">hello@punkfab.com</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="brand">PUNK<b>FAB</b></div>
+    <span>software-defined fabrication · define · simulate · verify · build</span>
+  </div>
+</footer>
+
+<script>
+  // scroll reveals
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.14});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  // light the pipeline stages in sequence when it scrolls into view
+  var pipe = document.querySelector('.pipe');
+  var pio = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){
+        document.querySelectorAll('.stage').forEach(function(s,i){
+          setTimeout(function(){ s.classList.add('lit'); }, i*260);
+        });
+        pio.disconnect();
+      }
+    });
+  }, {threshold:.3});
+  if(pipe) pio.observe(pipe);
+</script>
+</body>
+</html>
