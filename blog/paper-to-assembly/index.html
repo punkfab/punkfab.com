@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Geometry isn&#x27;t the design anymore: a paper-to-assembly case study — PUNKFAB log</title>
-<meta name="description" content="For decades the deliverable was geometry, because checking anything else meant building it. That&#x27;s no longer true. Case study: a novel motor from a 2025 paper, taken by AI agents to a simulated, verified, printable assembly in one session, with six defects found before anything physical existed. Half of them were in no geometry at all." />
-<meta property="og:title" content="Geometry isn&#x27;t the design anymore: a paper-to-assembly case study" />
-<meta property="og:description" content="For decades the deliverable was geometry, because checking anything else meant building it. That&#x27;s no longer true. Case study: a novel motor from a 2025 paper, taken by AI agents to a simulated, verified, printable assembly in one session, with six defects found before anything physical existed. Half of them were in no geometry at all." />
+<title>Design and simulation should be one loop: a paper-to-assembly case study — PUNKFAB log</title>
+<meta name="description" content="Engineers have simulated beyond geometry for decades, but as separate, late, specialist steps. Case study in hardware CI/CD: a novel motor from a 2025 paper, taken by AI agents through one continuous define → simulate → verify loop to a printable assembly, with six defects caught before anything physical existed." />
+<meta property="og:title" content="Design and simulation should be one loop: a paper-to-assembly case study" />
+<meta property="og:description" content="Engineers have simulated beyond geometry for decades, but as separate, late, specialist steps. Case study in hardware CI/CD: a novel motor from a 2025 paper, taken by AI agents through one continuous define → simulate → verify loop to a printable assembly, with six defects caught before anything physical existed." />
 <meta property="og:type" content="article" />
 <meta property="og:image" content="https://punkfab.com/blog/paper-to-assembly/mujoco-montage.jpg" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -21,12 +21,12 @@
   <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a build →</a></div>
 </nav>
 <main>
-  <p class="eyebrow">case study · software-defined manufacturing</p>
-  <h1>Geometry isn&#x27;t the design anymore</h1>
+  <p class="eyebrow">case study · hardware CI/CD</p>
+  <h1>Design and simulation should be one loop</h1>
   <p class="meta">2026-09-25 · Dan Newcome · engineering notes on <a href="https://dnuke.com/blog/posts/2026-09-25_text-to-cad-vs-simulate-first/">dnuke.com</a></p>
   <article class="post">
-<p><strong>For decades the deliverable of design has been geometry.</strong> First a drawing, then a CAD file. That wasn't because geometry is the whole design. It's because geometry was the only part you could check before building. Whether it moved right, whether it was wired right, what it did to the controller, whether it could actually be made: all of that waited for metal, a prototype and a scrapped first run.</p>
-<p><strong>That constraint is gone.</strong> With the assembly defined as code and AI agents doing the engineering work, physics, electrical behaviour, control loads and manufacturability can all be checked before anything physical exists. Geometry on its own is now a conceptually outdated deliverable. It's one export of the design, not the design. Here's the case study that convinced us. We took a novel mechanism from a research paper, handed it to agents working in the PUNKFAB loop (define → simulate → verify), and in one working session got back a simulated, verified, printable assembly. Six defects were found and fixed along the way, <strong>and three of them existed in no geometry at all.</strong></p>
+<p><strong>Engineers have simulated beyond geometry for decades.</strong> FEA, multibody dynamics, thermal and tolerance analysis are all mature and widely used. What's rarely streamlined is the path between them. Typically the geometry gets drawn first, then handed to an analyst. The analysis runs late, on a snapshot, in a different tool, and the findings come back as a list of changes to make by hand. Each check is a separate project, so it runs a few times per design, not every time the design changes.</p>
+<p><strong>Software got past this with CI/CD.</strong> Every change runs the whole test suite automatically, from the first commit, so nobody waits for a separate QA phase. Hardware should work the same way: design and simulation as one continuum, where changing a parameter re-runs the model, the physics and the manufacturability checks together. With the assembly defined as code and AI agents doing the engineering work, that loop can run from day one instead of arriving late. Here's a case study. We took a novel mechanism from a research paper, handed it to agents working in the PUNKFAB loop (define → simulate → verify), and in one working session got back a simulated, verified, printable assembly. Six defects were found and fixed before anything physical existed, <strong>and three of them were in no geometry at all.</strong></p>
 
 <h2>The idea</h2>
 <p><strong>A variable chain motor</strong>, from Tada et al. at the University of Tokyo, IROS 2025 (<a href="https://doi.org/10.1109/IROS60139.2025.11246199">doi:10.1109/IROS60139.2025.11246199</a>). Put spur gears on both the rotor and the stator of ordinary BLDC motors and mesh them. The chain then runs as one motor, from one driver and one encoder. The clever part is the stator gears: a motor can orbit its neighbour on a link and its commutation never notices. The motor bends around a joint instead of sitting beside it. They built a four-cell version into a humanoid elbow. We set out to build the smallest chain that bends, two cells on drone motors, as printed parts.</p>
@@ -56,11 +56,11 @@
 </ul>
 <p>The agent fixed all three, re-ran the checks, and re-ran the physics to confirm nothing else moved. Rendering and looking after every change also caught one of the agent's own errors: a kinematic declaration that silently left half the motor behind at a 90° bend.</p>
 <p><img loading="lazy" src="kinematics-trap.jpg" alt="Posed snapshot at a 90 degree bend: first declaration leaves cell B behind; corrected mates carry it"></p>
-<p><strong>Even the best geometry tooling stops at geometry.</strong> text-to-cad is good at what it does: its checks produced clean, printable parts. But the three defects that decide whether this motor turns at all aren't in the geometry, and no amount of better CAD finds them. A model can be correct and printable, and the machine it describes can still not work. That's why "AI CAD" is the wrong goal. It automates the part of the design that was already the easiest to check.</p>
+<p><strong>A geometry tool on its own covers one stage.</strong> text-to-cad is good at what it does: its checks produced clean, printable parts. But the three defects that decide whether this motor turns at all aren't in the geometry, so no amount of better CAD finds them. Faster CAD alone speeds up one stage of the pipeline. The bigger win is connecting the stages so every check runs every time.</p>
 <p><img loading="lazy" src="t2c-snapshots.jpg" alt="text-to-cad's four-view snapshot packet of the chain motor assembly"></p>
 
-<h2>What the design is now</h2>
-<p><strong>The deliverable was never just the six STL files.</strong> It's everything that was checked before they existed:</p>
+<h2>Hardware CI/CD</h2>
+<p><strong>What came out isn't just six STL files.</strong> It's a checked build: everything that was verified before those files existed, and that re-runs whenever a parameter changes.</p>
 <ul>
 <li>a model validated against the source paper</li>
 <li>an assembly with real joints and gear couplings</li>
@@ -68,7 +68,7 @@
 <li>manufacturability checks</li>
 <li>a set of standing rules for next time</li>
 </ul>
-<p>The geometry is what you send to the printer. The rest is why it will work when it comes off.</p>
+<p><strong>Today each stage runs with one command.</strong> The model report, the CAD build with its design rules and interference checks, and the physics checks each re-run from the same parameters. Wiring them to run on every commit, the way software CI does, is the next step. The geometry is what you send to the printer; the rest of the loop is why it should work when it comes off.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Defect</th><th>Found by</th><th>Stage</th></tr></thead>
 <tbody>
