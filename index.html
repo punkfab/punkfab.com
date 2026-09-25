@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PUNKFAB — software-defined fabrication</title>
-<meta name="description" content="Manufacturing that runs like software. Define your assembly in code, sweep hundreds of variants in simulation, and verify every build against the CAD before robot cells build it for real. Manufacturing for Design." />
+<meta name="description" content="Manufacturing that runs like software. We define your assembly in code, prove it in physics simulation and check it for manufacture, so you get verified CAD and a working design before anything is made. Manufacturing for Design." />
 <meta property="og:title" content="PUNKFAB — software-defined fabrication" />
-<meta property="og:description" content="Don't design a part — sweep a space. Manufacturing for Design: define, sweep, verify, build." />
+<meta property="og:description" content="Define your assembly in code, prove it in simulation, check it for manufacture. Verified CAD before anything is made." />
 <meta property="og:type" content="website" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -129,6 +129,20 @@
       box-shadow:0 0 12px var(--cyan)}
   .stage.verify .bar{background:var(--green); box-shadow:0 0 12px var(--green)}
   .stage.lit .bar{width:100%; transition:width .5s ease}
+  .stage .av{float:right; font-family:var(--f-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+       padding:2px 7px; border-radius:2px; border:1px solid rgba(57,255,158,.35); color:var(--green)}
+  .stage.road{background:#08080f}
+  .stage.road .bar{background:var(--dim); box-shadow:none}
+  .stage.road h3{color:var(--muted)} .stage.road p{color:var(--dim)}
+  .stage.road .av{border-color:var(--line); color:var(--dim)}
+  .pipe-note{font-family:var(--f-mono); font-size:13px; color:var(--muted); margin:-22px 0 28px}
+  .pipe-note b{color:var(--green); font-weight:500}
+  .road-note{max-width:640px; color:var(--muted); margin:-20px 0 30px}
+  .road-note b{color:var(--ink); font-weight:500}
+  #shop .card{opacity:.8}
+  #shop .card .k{color:var(--dim)}
+  .proof{margin-top:22px; font-family:var(--f-mono); font-size:13px; color:var(--muted)}
+  .proof a{color:var(--cyan)}
 
   /* capabilities */
   .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
@@ -216,7 +230,7 @@
 <nav>
   <div class="brand">PUNK<b>FAB</b></div>
   <a class="nav-cta" href="/blog/" style="margin-left:auto;margin-right:10px">log</a>
-  <a class="nav-cta" href="#contact">start a build →</a>
+  <a class="nav-cta" href="#contact">start a project →</a>
 </nav>
 
 <header>
@@ -224,12 +238,12 @@
     <p class="eyebrow">software-defined fabrication</p>
     <h1 class="glitch" data-text="PUNKFAB">PUNKFAB</h1>
     <p class="tagline">Manufacturing that runs like <span class="b">software</span>.</p>
-    <p class="lede">Define your assembly in code. Simulate it until it works. Then robot cells build it
-      for real — and <b>every build is verified against the CAD</b> before it ships.</p>
+    <p class="lede">We define your assembly in code, prove it in physics simulation, and check it for
+      manufacture. <b>You get verified CAD and a design that works</b> before anything is made.</p>
 
     <div class="cta-row">
-      <a class="btn primary" href="#contact">Start a build</a>
-      <a class="btn ghost" href="#pipeline">See how it runs ↓</a>
+      <a class="btn primary" href="#contact">Start a project</a>
+      <a class="btn ghost" href="#offer">What you get ↓</a>
     </div>
 
     <div class="term" aria-hidden="true">
@@ -243,13 +257,31 @@
         <div class="row cmd" style="animation-delay:.1s"><span class="p">$</span> punkfab build chain-motor</div>
         <div class="row" style="animation-delay:.4s"><span class="ok">✓ defined</span>&nbsp;&nbsp;&nbsp;<span class="note">assembly · 6 parts · 4 joints</span></div>
         <div class="row" style="animation-delay:.62s"><span class="ok">✓ simulated</span>&nbsp;<span class="note">physics ok · 0 collisions</span></div>
-        <div class="row" style="animation-delay:.84s"><span class="ok">✓ scheduled</span>&nbsp;<span class="note">3 cells · 52s cycle</span></div>
-        <div class="row" style="animation-delay:1.06s"><span class="ok">✓ toolpath</span>&nbsp;&nbsp;<span class="note">reachable · 0.46mm</span></div>
-        <div class="row" style="animation-delay:1.28s"><span class="run">⟳ building</span>&nbsp;&nbsp;<span class="lbl">cell-02</span> <span class="note">press + glue</span><span class="cursor"></span></div>
+        <div class="row" style="animation-delay:.84s"><span class="ok">✓ verified</span>&nbsp;&nbsp;<span class="note">gear clearance 0.048mm · 0 interferences</span></div>
+        <div class="row" style="animation-delay:1.06s"><span class="ok">✓ exported</span>&nbsp;&nbsp;<span class="note">STEP · STL · sim report</span></div>
+        <div class="row" style="animation-delay:1.28s"><span class="run">→ ready</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="lbl">hand off</span> <span class="note">to your printer or fabricator</span><span class="cursor"></span></div>
       </div>
     </div>
   </div>
 </header>
+
+<section id="offer">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-tag">available now</span>
+      <h2>What you get today.</h2>
+    </div>
+    <div class="grid">
+      <div class="card reveal"><span class="k">define</span><h3>Your assembly as code</h3>
+        <p>Parametric source for every part, mate and joint. Change a number and the whole assembly regenerates. Start from a sketch, an existing design, or a paper.</p></div>
+      <div class="card reveal"><span class="k">simulate</span><h3>Physics before hardware</h3>
+        <p>The real parts simulated in motion: loads, collisions, dynamics and the specific claims your design depends on, with a report of what was proven and how.</p></div>
+      <div class="card reveal"><span class="k">verify</span><h3>Manufacturable CAD</h3>
+        <p>Clearance, interference, wall-thickness and print-orientation checks, then STEP and STL files ready for your printer or fabricator.</p></div>
+    </div>
+    <p class="proof reveal">Case study: a motor mechanism from a research paper, taken to a simulated, verified, printable assembly — <a href="/blog/paper-to-assembly/">read it →</a></p>
+  </div>
+</section>
 
 <section id="pipeline">
   <div class="wrap">
@@ -257,19 +289,20 @@
       <span class="sec-tag">the pipeline</span>
       <h2>One path, code to assembly.</h2>
     </div>
+    <p class="pipe-note reveal"><b>Today:</b> define, simulate and verify in software. Building it for you is the roadmap.</p>
     <div class="pipe reveal">
-      <div class="stage"><span class="bar"></span><span class="n">01 / DEFINE</span>
+      <div class="stage"><span class="bar"></span><span class="av">now</span><span class="n">01 / DEFINE</span>
         <h3>Define</h3><p>The whole assembly as parametric code: parts, mates and motion. Change a number, regenerate all of it.</p></div>
-      <div class="stage"><span class="bar"></span><span class="n">02 / SIMULATE</span>
+      <div class="stage"><span class="bar"></span><span class="av">now</span><span class="n">02 / SIMULATE</span>
         <h3>Simulate</h3><p>Physics sim proves the mechanism and the motion before any metal moves.</p></div>
-      <div class="stage"><span class="bar"></span><span class="n">03 / SCHEDULE</span>
-        <h3>Schedule</h3><p>An operation graph sequences the cells and cuts the cycle time.</p></div>
-      <div class="stage"><span class="bar"></span><span class="n">04 / TOOLPATH</span>
-        <h3>Toolpath</h3><p>CAM turns each step into arm motion, checked for reach and clearance.</p></div>
-      <div class="stage"><span class="bar"></span><span class="n">05 / BUILD</span>
+      <div class="stage verify"><span class="bar"></span><span class="av">now</span><span class="n">03 / VERIFY</span>
+        <h3>Verify</h3><p>Clearance, interference, wall thickness and print orientation checked against the design before anything is made.</p></div>
+      <div class="stage road"><span class="bar"></span><span class="av">roadmap</span><span class="n">04 / SCHEDULE + TOOLPATH</span>
+        <h3>Plan the build</h3><p>An operation graph sequences robot cells; CAM turns each step into arm motion, checked for reach.</p></div>
+      <div class="stage road"><span class="bar"></span><span class="av">roadmap</span><span class="n">05 / BUILD</span>
         <h3>Build</h3><p>Tool-changing robot cells form, cut, press, and put the real assembly together.</p></div>
-      <div class="stage verify"><span class="bar"></span><span class="n">06 / VERIFY</span>
-        <h3>Verify</h3><p>The finished assembly is measured against the CAD. Out of tolerance never ships.</p></div>
+      <div class="stage road"><span class="bar"></span><span class="av">roadmap</span><span class="n">06 / MEASURE</span>
+        <h3>Measure</h3><p>The finished assembly is measured against the CAD, and the measurements feed back into the simulation.</p></div>
     </div>
   </div>
 </section>
@@ -277,12 +310,13 @@
 <section id="shop">
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="sec-tag">the shop floor</span>
-      <h2>Processes, on tap.</h2>
+      <span class="sec-tag">roadmap · not yet available</span>
+      <h2>Where we're headed: the shop floor.</h2>
     </div>
+    <p class="road-note reveal">These are the processes we're developing so the same code that proves a design can also build it. <b>None of them is offered as a service yet.</b></p>
     <div class="grid">
       <div class="card reveal"><span class="k">wire</span><h3>Wire forming</h3>
-        <p>CNC bends from a program. Springback is calibrated per spool, so the first part is right.</p></div>
+        <p>CNC bends from a program, with springback calibrated per spool so the first part comes out right.</p></div>
       <div class="card reveal"><span class="k">sheet</span><h3>Sheet &amp; foil forming</h3>
         <p>Fold flat stock into stiff profiles — or layer-form solid parts from cheap foil.</p></div>
       <div class="card reveal"><span class="k">arms</span><h3>Tool-changing arms</h3>
@@ -335,10 +369,10 @@
 <section class="band">
   <div class="wrap reveal">
     <p class="big">The simulation is a <span class="m">cache</span> of <span class="c">reality</span>.</p>
-    <p>Every parameter — a bend's springback, a press fit, a bead's set time — is measured on real
-      hardware, stamped with how fresh it is, and re-checked before it's trusted. <b>A green build
-      means a good part, not a hopeful one.</b></p>
-    <span class="stamp"><span class="d"></span> calibration: FRESH · 0 stale parameters</span>
+    <p>A simulation is only as good as its numbers. Every parameter is traced to a source — a
+      datasheet, a paper, a measurement — or flagged as an assumption until it's measured on real
+      hardware. <b>You always know which results are proven and which are provisional.</b></p>
+    <span class="stamp"><span class="d"></span> every number sourced or flagged · never silent</span>
   </div>
 </section>
 
@@ -363,13 +397,13 @@
           <p>Explore hundreds of variants for almost nothing and map the whole feasible region — the edge a traditional shop can't afford to find.</p></div></div>
       <div class="lex-row"><span class="lex-tier">Discipline</span>
         <div><h3>Test-Driven Fabrication</h3>
-          <p>Write the constraint first. The fab converges until the build goes green.</p></div></div>
+          <p>Write the constraint first. The design converges until the build goes green.</p></div></div>
       <div class="lex-row trust"><span class="lex-tier">Trust</span>
         <div><h3>The simulation is a cache of reality</h3>
-          <p>Every parameter is measured on real hardware, stamped for freshness, and re-checked before it's trusted.</p></div></div>
+          <p>Every parameter is traced to a source or flagged as an assumption, and re-checked once it's measured on real hardware.</p></div></div>
       <div class="lex-row guar"><span class="lex-tier">Guarantee</span>
         <div><h3>Verified by construction</h3>
-          <p>Some constraints aren't checked after the fact — they're made impossible to violate by how the assembly is built.</p></div></div>
+          <p>Some constraints aren't checked after the fact — they're made impossible to violate by how the assembly is designed.</p></div></div>
     </div>
   </div>
 </section>
@@ -378,8 +412,8 @@
   <div class="wrap reveal">
     <div class="sec-head" style="justify-content:center"><span class="sec-tag">get in touch</span></div>
     <h2>Building something that doesn't fit a catalog?</h2>
-    <p>Send us the assembly, a single part, or just the problem. If it can be defined, simulated,
-      and built, we want it.</p>
+    <p>Send us the assembly, a single part, a paper, or just the problem. If it can be defined and
+      simulated, we want it — and we'll tell you plainly what's proven and what still needs the bench.</p>
     <a class="btn primary" href="mailto:hello@punkfab.com">hello@punkfab.com</a>
   </div>
 </section>
@@ -387,7 +421,7 @@
 <footer>
   <div class="wrap">
     <div class="brand">PUNK<b>FAB</b></div>
-    <span>manufacturing for design · define · sweep · verify · build</span>
+    <span>manufacturing for design · define · simulate · verify</span>
   </div>
 </footer>
 
