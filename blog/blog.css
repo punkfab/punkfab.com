@@ -1,0 +1,76 @@
+/* PUNKFAB log — shares the landing page's tokens, fonts and ambient background. */
+:root{
+  --bg:#07070d; --bg2:#0c0c16; --panel:rgba(255,255,255,.025);
+  --ink:#e9eaf5; --muted:#8b8da8; --dim:#5a5c78;
+  --magenta:#ff2d95; --cyan:#00e5ff; --green:#39ff9e;
+  --line:rgba(0,229,255,.10); --grid:rgba(120,140,255,.045);
+  --f-display:"Chakra Petch",system-ui,sans-serif;
+  --f-body:"Space Grotesk",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--f-body); line-height:1.65; -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(900px 600px at 12% -5%, rgba(255,45,149,.12), transparent 60%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(0,229,255,.09), transparent 55%),
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/44px 44px;
+}
+a{color:var(--cyan)}
+a:hover{color:var(--magenta)}
+
+nav{position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between;
+    max-width:1080px; margin:0 auto; padding:22px 24px; gap:16px}
+.brand{font-family:var(--f-display); font-weight:700; letter-spacing:.14em; font-size:15px;
+       color:var(--ink); text-decoration:none}
+.brand b{color:var(--magenta)}
+.nav-links{display:flex; gap:10px}
+.nav-links a{font-family:var(--f-mono); font-size:12.5px; color:var(--cyan); text-decoration:none;
+    border:1px solid var(--line); padding:8px 14px; border-radius:2px}
+.nav-links a:hover{border-color:var(--cyan); box-shadow:0 0 18px rgba(0,229,255,.25); color:var(--cyan)}
+
+main{position:relative; z-index:1; max-width:760px; margin:0 auto; padding:30px 24px 80px}
+.eyebrow{font-family:var(--f-mono); font-size:12px; letter-spacing:.32em; text-transform:uppercase;
+         color:var(--magenta); margin:0 0 14px}
+h1{font-family:var(--f-display); font-weight:700; font-size:clamp(30px,5.4vw,48px);
+   line-height:1.08; margin:0 0 18px; letter-spacing:.01em}
+.meta{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); margin:0 0 36px;
+      padding-bottom:22px; border-bottom:1px solid var(--line)}
+.meta a{color:var(--muted)}
+
+.post h2{font-family:var(--f-display); font-weight:600; font-size:clamp(22px,3.4vw,30px);
+         margin:52px 0 16px; color:var(--ink)}
+.post h2::before{content:"// "; color:var(--cyan); font-family:var(--f-mono); font-size:.7em}
+.post p, .post li{color:#d4d6e8; font-size:17px}
+.post p > em:only-child{font-family:var(--f-mono); font-style:normal; color:var(--dim); font-size:13px}
+.post strong{color:var(--ink)}
+.post code{font-family:var(--f-mono); font-size:.86em; color:var(--green);
+           background:rgba(57,255,158,.06); padding:1px 5px; border-radius:2px}
+.post img{display:block; width:100%; height:auto; margin:8px 0; border:1px solid var(--line);
+          border-radius:3px; background:#fff}
+.post ul{padding-left:22px}
+.post li{margin:10px 0}
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--line); border-radius:3px}
+.post table{border-collapse:collapse; width:100%; font-size:14px; min-width:560px}
+.post th, .post td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+.post th{font-family:var(--f-mono); font-size:12px; letter-spacing:.06em; color:var(--cyan); font-weight:500}
+.post tr:last-child td{border-bottom:none}
+
+.postlist{list-style:none; padding:0; margin:0}
+.postlist li{padding:22px 0; border-bottom:1px solid var(--line)}
+.postlist .date{font-family:var(--f-mono); font-size:12px; color:var(--dim)}
+.postlist a.title{display:block; font-family:var(--f-display); font-weight:600; font-size:22px;
+                  color:var(--ink); text-decoration:none; margin:4px 0 8px}
+.postlist a.title:hover{color:var(--cyan)}
+.postlist p{margin:0; color:var(--muted)}
+
+footer{position:relative; z-index:1; border-top:1px solid var(--line); padding:34px 24px;
+       max-width:1080px; margin:0 auto; display:flex; justify-content:space-between;
+       flex-wrap:wrap; gap:12px; font-family:var(--f-mono); font-size:12px; color:var(--dim)}
+@media (max-width:560px){ .post p, .post li{font-size:16px} nav{padding:18px 16px} main{padding:20px 16px 60px} }
