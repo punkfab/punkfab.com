@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Geometry isn&#x27;t the design anymore: a paper-to-assembly case study — PUNKFAB log</title>
+<meta name="description" content="For decades the deliverable was geometry, because checking anything else meant building it. That&#x27;s no longer true. Case study: a novel motor from a 2025 paper, taken by AI agents to a simulated, verified, printable assembly in one session, with six defects found before anything physical existed. Half of them were in no geometry at all." />
+<meta property="og:title" content="Geometry isn&#x27;t the design anymore: a paper-to-assembly case study" />
+<meta property="og:description" content="For decades the deliverable was geometry, because checking anything else meant building it. That&#x27;s no longer true. Case study: a novel motor from a 2025 paper, taken by AI agents to a simulated, verified, printable assembly in one session, with six defects found before anything physical existed. Half of them were in no geometry at all." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/paper-to-assembly/mujoco-montage.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a build →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">case study · software-defined manufacturing</p>
+  <h1>Geometry isn&#x27;t the design anymore</h1>
+  <p class="meta">2026-09-25 · Dan Newcome · engineering notes on <a href="https://dnuke.com/blog/posts/2026-09-25_text-to-cad-vs-simulate-first/">dnuke.com</a></p>
+  <article class="post">
+<p><strong>For decades the deliverable of design has been geometry.</strong> First a drawing, then a CAD file. That wasn't because geometry is the whole design. It's because geometry was the only part you could check before building. Whether it moved right, whether it was wired right, what it did to the controller, whether it could actually be made: all of that waited for metal, a prototype and a scrapped first run.</p>
+<p><strong>That constraint is gone.</strong> With the assembly defined as code and AI agents doing the engineering work, physics, electrical behaviour, control loads and manufacturability can all be checked before anything physical exists. Geometry on its own is now a conceptually outdated deliverable. It's one export of the design, not the design. Here's the case study that convinced us. We took a novel mechanism from a research paper, handed it to agents working in the PUNKFAB loop (define → simulate → verify), and in one working session got back a simulated, verified, printable assembly. Six defects were found and fixed along the way, <strong>and three of them existed in no geometry at all.</strong></p>
+
+<h2>The idea</h2>
+<p><strong>A variable chain motor</strong>, from Tada et al. at the University of Tokyo, IROS 2025 (<a href="https://doi.org/10.1109/IROS60139.2025.11246199">doi:10.1109/IROS60139.2025.11246199</a>). Put spur gears on both the rotor and the stator of ordinary BLDC motors and mesh them. The chain then runs as one motor, from one driver and one encoder. The clever part is the stator gears: a motor can orbit its neighbour on a link and its commutation never notices. The motor bends around a joint instead of sitting beside it. They built a four-cell version into a humanoid elbow. We set out to build the smallest chain that bends, two cells on drone motors, as printed parts.</p>
+
+<h2>01 / Read: the abstract isn't the paper</h2>
+<p><strong>The agent's first read, from the abstract alone, got the mechanism wrong.</strong> It guessed at how the gears couple the motors, and both guesses were wrong. With the full paper in hand, it extracted the real topology: rotor gears lock the rotor angles, and stator gears only at the hinge. It also pulled out the switching circuit and every published number. Then it wrote a model of the motor and checked it against the paper's own table of torque and speed across wiring configurations. It matched within 0.2%. Nothing got built until the model agreed with the source.</p>
+
+<h2>02 / Define the assembly</h2>
+<p><strong>The design is the assembly, not a pile of parts.</strong> Six printed parts, four joints and two gear couplings are all generated from one set of parameters, so geometry, joints and physics move together when a number changes. The agent also checked its design against what the repo already knew. Our measured records for the 2204 motor say its shaft exits on the mount side, not the top, and it redesigned the rotor gear as a cap bonded over the bell before anything went further.</p>
+<p><img loading="lazy" src="mujoco-montage.jpg" alt="MuJoCo playback of the two-cell chain motor bending to 155 degrees while both rotors stay synchronized"></p>
+
+<h2>03 / Simulate: three defects in no geometry</h2>
+<p>The same parts were loaded into a physics simulation (MuJoCo) on a real joint tree, with the gear meshes as constraints. Three findings came out that no CAD model contains:</p>
+<ul>
+<li><strong>The second motor has to be wired reversed.</strong> The gear mesh spins it backwards, so two of its phase leads must be swapped. Wired straight, the two motors cancel to zero output torque: they draw current and don't move. <strong>The paper never mentions this.</strong></li>
+<li><strong>The bend is torque-neutral only with exactly matched gear ratios.</strong> At stall the hinge feels 0.000 mN·m. One stator gear a single tooth off gives 0.401 mN·m, exactly as virtual work predicts. Without stator gears, a 155° bend scrambles commutation completely.</li>
+<li><strong>Bending fast loads the controller.</strong> The orbiting rotor turns twice the hinge angle, so the output servo must supply 2·I·φ̈ during elbow acceleration. The sim matches the formula exactly, and the controller spec now includes it.</li>
+</ul>
+<p><img loading="lazy" src="chain-model.jpg" alt="Speed-torque envelopes for series and parallel wiring, commutation error vs hinge angle, and efficiency vs load"></p>
+
+<h2>04 / Verify: bring every check you can find</h2>
+<p><strong>For the verify stage, the agent pulled in outside tools.</strong> It rebuilt the parts under <a href="https://github.com/earthtojake/text-to-cad">text-to-cad</a>, the most popular AI CAD toolkit (about 16k stars, MIT licensed), and ran its checks. They caught three manufacturing bugs our own checks had passed:</p>
+<ul>
+<li><strong>Zero gear backlash:</strong> 0.000 mm between the teeth. An overlap check counts touching as passing, but printed gears like that bind.</li>
+<li><strong>0.11 mm walls</strong>, where screw holes broke into a bore. Both parts were valid solids that couldn't be printed.</li>
+<li><strong>A cap that needs support in every orientation</strong>, until a fused dowel became a press-fit steel pin.</li>
+</ul>
+<p>The agent fixed all three, re-ran the checks, and re-ran the physics to confirm nothing else moved. Rendering and looking after every change also caught one of the agent's own errors: a kinematic declaration that silently left half the motor behind at a 90° bend.</p>
+<p><img loading="lazy" src="kinematics-trap.jpg" alt="Posed snapshot at a 90 degree bend: first declaration leaves cell B behind; corrected mates carry it"></p>
+<p><strong>Even the best geometry tooling stops at geometry.</strong> text-to-cad is good at what it does: its checks produced clean, printable parts. But the three defects that decide whether this motor turns at all aren't in the geometry, and no amount of better CAD finds them. A model can be correct and printable, and the machine it describes can still not work. That's why "AI CAD" is the wrong goal. It automates the part of the design that was already the easiest to check.</p>
+<p><img loading="lazy" src="t2c-snapshots.jpg" alt="text-to-cad's four-view snapshot packet of the chain motor assembly"></p>
+
+<h2>What the design is now</h2>
+<p><strong>The deliverable was never just the six STL files.</strong> It's everything that was checked before they existed:</p>
+<ul>
+<li>a model validated against the source paper</li>
+<li>an assembly with real joints and gear couplings</li>
+<li>physics results the controller spec depends on, including a wiring rule</li>
+<li>manufacturability checks</li>
+<li>a set of standing rules for next time</li>
+</ul>
+<p>The geometry is what you send to the printer. The rest is why it will work when it comes off.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Defect</th><th>Found by</th><th>Stage</th></tr></thead>
+<tbody>
+<tr><td>Second motor must be wired reversed (not in the paper)</td><td>physics simulation</td><td>simulate</td></tr>
+<tr><td>Hinge only neutral with matched gear ratios</td><td>physics simulation</td><td>simulate</td></tr>
+<tr><td>Hinge acceleration loads the output servo</td><td>physics simulation</td><td>simulate</td></tr>
+<tr><td>Zero gear backlash</td><td>clearance query (text-to-cad)</td><td>verify</td></tr>
+<tr><td>0.11 mm walls into a bore</td><td>printability tool (text-to-cad)</td><td>verify</td></tr>
+<tr><td>Cap needs support in every orientation</td><td>orientation search (text-to-cad)</td><td>verify</td></tr>
+<tr><td colspan="3"><strong>Parts printed to find all six: 0</strong></td></tr>
+</tbody></table></div>
+<p><strong>Checks compound.</strong> Every defect found once becomes a standing rule. Gear-mesh clearance and minimum-wall rules now run on every build, and sampled wall thickness and print orientation are next. The next assembly never pays for these lessons again. Backlash, hub geometry and pin fit are parameters now, not fixes, so the design can be swept across a whole family of chain motors.</p>
+
+<h2>Who did what</h2>
+<p><strong>A person chose the paper and set the scope; the agents did the engineering.</strong> We picked the paper, asked for a two-cell version, and asked for an outside cross-check. Agents working through our skills did the rest:</p>
+<ul>
+<li>reading the paper and building a model validated against it</li>
+<li>the parametric assembly, and simulating it</li>
+<li>running and adopting third-party verification tools</li>
+<li>fixing what those tools found, and re-verifying</li>
+</ul>
+<p><strong>Not everything moves into software.</strong> Friction, wear, thermal limits and print variation still have to be measured, and in keeping with <strong>the simulation is a cache of reality</strong>, we flag what hasn't been yet: the kinematic and torque results are checked against the published paper, but the efficiency curves still use placeholder loss values until the bench measures them. The first print is where calibration starts, not where debugging starts.</p>
+<p>Everything is open in <a href="https://github.com/punkfab/robot-actuators">punkfab/robot-actuators</a> under <code>chain-motor/</code>, and the step-by-step engineering notes, with timings, are on <a href="https://dnuke.com/blog/posts/2026-09-25_text-to-cad-vs-simulate-first/">dnuke.com</a>. Got a paper, a sketch, or an assembly that should be proven before it's built? <a href="/#contact">Start a build →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+</body>
+</html>
