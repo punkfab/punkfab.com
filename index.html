@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PUNKFAB — software-defined fabrication</title>
-<meta name="description" content="Manufacturing that runs like software. Define a part in code, sweep hundreds of variants in simulation, and verify every build against the CAD before robot cells build it for real. Manufacturing for Design." />
+<meta name="description" content="Manufacturing that runs like software. Define your assembly in code, sweep hundreds of variants in simulation, and verify every build against the CAD before robot cells build it for real. Manufacturing for Design." />
 <meta property="og:title" content="PUNKFAB — software-defined fabrication" />
 <meta property="og:description" content="Don't design a part — sweep a space. Manufacturing for Design: define, sweep, verify, build." />
 <meta property="og:type" content="website" />
@@ -224,7 +224,7 @@
     <p class="eyebrow">software-defined fabrication</p>
     <h1 class="glitch" data-text="PUNKFAB">PUNKFAB</h1>
     <p class="tagline">Manufacturing that runs like <span class="b">software</span>.</p>
-    <p class="lede">Define a part in code. Simulate it until it works. Then robot cells build it
+    <p class="lede">Define your assembly in code. Simulate it until it works. Then robot cells build it
       for real — and <b>every build is verified against the CAD</b> before it ships.</p>
 
     <div class="cta-row">
@@ -240,8 +240,8 @@
         <span class="spacer"></span>punkfab · build
       </div>
       <div class="term-body" id="log">
-        <div class="row cmd" style="animation-delay:.1s"><span class="p">$</span> punkfab build bracket-v3</div>
-        <div class="row" style="animation-delay:.4s"><span class="ok">✓ defined</span>&nbsp;&nbsp;&nbsp;<span class="note">cad → feature tree</span></div>
+        <div class="row cmd" style="animation-delay:.1s"><span class="p">$</span> punkfab build chain-motor</div>
+        <div class="row" style="animation-delay:.4s"><span class="ok">✓ defined</span>&nbsp;&nbsp;&nbsp;<span class="note">assembly · 6 parts · 4 joints</span></div>
         <div class="row" style="animation-delay:.62s"><span class="ok">✓ simulated</span>&nbsp;<span class="note">physics ok · 0 collisions</span></div>
         <div class="row" style="animation-delay:.84s"><span class="ok">✓ scheduled</span>&nbsp;<span class="note">3 cells · 52s cycle</span></div>
         <div class="row" style="animation-delay:1.06s"><span class="ok">✓ toolpath</span>&nbsp;&nbsp;<span class="note">reachable · 0.46mm</span></div>
@@ -255,11 +255,11 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="sec-tag">the pipeline</span>
-      <h2>One path, code to part.</h2>
+      <h2>One path, code to assembly.</h2>
     </div>
     <div class="pipe reveal">
       <div class="stage"><span class="bar"></span><span class="n">01 / DEFINE</span>
-        <h3>Define</h3><p>Geometry as parametric code. Change a number, regenerate the part.</p></div>
+        <h3>Define</h3><p>The whole assembly as parametric code: parts, mates and motion. Change a number, regenerate all of it.</p></div>
       <div class="stage"><span class="bar"></span><span class="n">02 / SIMULATE</span>
         <h3>Simulate</h3><p>Physics sim proves the mechanism and the motion before any metal moves.</p></div>
       <div class="stage"><span class="bar"></span><span class="n">03 / SCHEDULE</span>
@@ -267,9 +267,9 @@
       <div class="stage"><span class="bar"></span><span class="n">04 / TOOLPATH</span>
         <h3>Toolpath</h3><p>CAM turns each step into arm motion, checked for reach and clearance.</p></div>
       <div class="stage"><span class="bar"></span><span class="n">05 / BUILD</span>
-        <h3>Build</h3><p>Tool-changing robot cells form, cut, press, and assemble the real part.</p></div>
+        <h3>Build</h3><p>Tool-changing robot cells form, cut, press, and put the real assembly together.</p></div>
       <div class="stage verify"><span class="bar"></span><span class="n">06 / VERIFY</span>
-        <h3>Verify</h3><p>The finished part is measured against the CAD. Out of tolerance never ships.</p></div>
+        <h3>Verify</h3><p>The finished assembly is measured against the CAD. Out of tolerance never ships.</p></div>
     </div>
   </div>
 </section>
@@ -305,7 +305,7 @@
     </div>
     <p class="inv reveal">Design <span class="m">for</span> Manufacturing bends the design to fit the machine.<br>
       We bend the <span class="c">machine</span> to fit the design.</p>
-    <p class="lede2 reveal">When simulate-and-verify costs almost nothing, you stop guessing a single part
+    <p class="lede2 reveal">When simulate-and-verify costs almost nothing, you stop guessing a single design
       and <b>sweep a whole family</b> — every variant built and checked in software, the constraints
       picking the survivor. You don't hit a spec; you <b>map the envelope</b> around it. Something
       traditional shops can't afford, because there each try burns a real tool and a real setup.</p>
@@ -352,6 +352,9 @@
       <div class="lex-row"><span class="lex-tier">Spine</span>
         <div><h3>Manufacturing for Design</h3>
           <p>The inversion of DFM. The factory is a subroutine of your design search, not a constraint you contort around.</p></div></div>
+      <div class="lex-row"><span class="lex-tier">Scope</span>
+        <div><h3>Assembly-first</h3>
+          <p>The unit of design is the assembly: parts, mates, motion, and how it goes together. A single part is just an assembly of one.</p></div></div>
       <div class="lex-row"><span class="lex-tier">Philosophy</span>
         <div><h3>Design as Search</h3>
           <p>You don't draw a part — you search a space, and the winner is verified, not asserted.</p></div></div>
@@ -366,7 +369,7 @@
           <p>Every parameter is measured on real hardware, stamped for freshness, and re-checked before it's trusted.</p></div></div>
       <div class="lex-row guar"><span class="lex-tier">Guarantee</span>
         <div><h3>Verified by construction</h3>
-          <p>Some constraints aren't checked after the fact — they're made impossible to violate by how the part is built.</p></div></div>
+          <p>Some constraints aren't checked after the fact — they're made impossible to violate by how the assembly is built.</p></div></div>
     </div>
   </div>
 </section>
@@ -375,7 +378,7 @@
   <div class="wrap reveal">
     <div class="sec-head" style="justify-content:center"><span class="sec-tag">get in touch</span></div>
     <h2>Building something that doesn't fit a catalog?</h2>
-    <p>Send us the part, the assembly, or just the problem. If it can be defined, simulated,
+    <p>Send us the assembly, a single part, or just the problem. If it can be defined, simulated,
       and built, we want it.</p>
     <a class="btn primary" href="mailto:hello@punkfab.com">hello@punkfab.com</a>
   </div>
