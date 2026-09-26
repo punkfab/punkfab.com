@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pad or web: why a soft gripper drags objects into its palm, and how simulation fixed it before printing — PUNKFAB log</title>
+<meta name="description" content="Case study in simulate-first hardware: a soft tendon-driven hand meant for a slip-sensing paper kept pulling objects into the web of the hand instead of holding them at the pads. A MuJoCo bench built from the CAD parameters found the mechanism, ruled out the obvious fix, and settled the two-or-three-finger question before a single part was printed." />
+<meta property="og:title" content="Pad or web: why a soft gripper drags objects into its palm" />
+<meta property="og:description" content="A soft tendon-driven hand kept pulling objects into its web instead of holding them at the pads. A simulation bench built from the CAD parameters found the mechanism, ruled out the obvious fix, and settled the two-or-three-finger question before printing." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/pad-or-web/fingers-montage.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">case study · simulate first</p>
+  <h1>Pad or web: why a soft gripper drags objects into its palm</h1>
+  <p class="meta">2026-09-25 · Dan Newcome</p>
+  <article class="post">
+<p><strong>We have a paper that needs a gripper, and the gripper we had would have made the paper unmeasurable.</strong> The paper argues that on a soft, tendon-driven hand the body itself is the tactile sensor: servo current, tendon tension and finger flex already carry an incipient-slip signal, so a slip-reactive minimum-force controller needs no fingertip skin. To test that you need a grasp that is <em>friction-limited</em>, where grip force is set by cable tension and the object can slip. Our first hand didn't grasp that way. In simulation it dragged every object into the web of the hand and seated it against the palm. That's a cage, not a pinch: grip force stops mattering, and there is no slip to measure.</p>
+<p>Two questions were open before we could print anything. Two fingers or three? Two opposed digits seemed likely to collide on small objects, while three should clear a pen. And what actually pushes the object into the web, and how do you stop it? Both were answered in one session with a simulation bench built from the same parameters that generate the printed parts. No part was printed to find any of this.</p>
+
+<h2>The bench</h2>
+<p><strong>Every digit in the simulation is built from the CAD's numbers.</strong> Each printed finger is a discretized logarithmic spiral in TPU: eight tapering units, a V-notch at every joint, a thin elastic web on the back as the spring, one cable to curl it. In MuJoCo that becomes a chain of rigid units with a hinge at each web, a torsional spring at each hinge, and a tendon through the cable channel. The joint ranges, masses, hinge positions and now the spring stiffness all come from the part definition, so changing a web thickness changes both the STL and the physics.</p>
+<p>The bench points the hand <em>down</em>, so gravity pulls the object out of the grasp and anything moving toward the palm is the fingers' doing. It presents an object at the pads, closes each cable until that finger feels a small contact force and then holds tension (the way a real tendon hand stops on a current rise), releases the object, and reports four things: whether the object stayed at the pads, migrated into the web, or dropped; how far the pad's contact normal tilts toward the palm; how much extra pad force one extra newton of cable tension buys; and how hard you have to pull to get the object out.</p>
+
+<h2>01 / The mechanism, measured</h2>
+<p><strong>An object slides into the web exactly when the pads push it palm-ward harder than friction holds.</strong> That is a friction-cone statement: the contact normal's tilt toward the palm has to exceed the friction angle, 31° for the μ=0.6 we assumed for TPU on plastic. So the question became: what tilts the pad?</p>
+<p><img loading="lazy" src="fingers-montage.jpg" alt="Three finger designs closing on a 25 mm ball, hand pointing down: the log-spiral finger hooks its tips over the ball, the stiff-pad finger holds it on flat pads, the root-compliant finger holds it as a straight lever"></p>
+<p><strong>The log-spiral finger curls tip-first, and that is the problem.</strong> The web's bending stiffness goes as thickness cubed, and the web thins toward the tip faster than the cable's lever arm shrinks, so the tip bends first. Once the tip touches an object, more cable tension bends the tip <em>around</em> it. In the top row you can see the tips hooking over the ball. The pad normal swings toward the palm, the object is pushed in, the tip curls further, and the loop runs away. On a 25 mm ball the bench measured that adding cable tension <em>reduced</em> the normal force on the object and moved it 8 mm per newton toward the palm.</p>
+<p><strong>The second cause is plain geometry.</strong> A pad carried on a bending finger arrives tilted by roughly the closing travel divided by the lever from the effective hinge to the pad. A finger that bends in the middle has a short lever and a big tilt.</p>
+<p>Both fixes are stiffness placement, and both are a one-line change to the part definition: a per-joint web thickness profile. <strong>Stiff pad</strong> thickens the three distal webs so the last 27 mm is a near-rigid flat pad on a compliant knuckle. <strong>Root</strong> goes further: only the two proximal webs stay thin, and the rest of the finger is a rigid lever. The lever is now the whole finger, so the tilt at contact is small.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Finger, 2 opposed, base gap 54 mm</th><th>Ø8 ball</th><th>Ø15</th><th>Ø25</th><th>Ø40</th><th>Ø8 pen end-on</th><th>Ø8 pen across</th></tr></thead>
+<tbody>
+<tr><td>log-spiral (as printed)</td><td>drop (tips collide)</td><td>pad</td><td><strong>web</strong>, 8 mm in</td><td>pad, hooked at 34°</td><td><strong>web</strong></td><td>drop</td></tr>
+<tr><td>stiff distal pad</td><td>pad</td><td><strong>web</strong>, 6 mm in</td><td>pad, 25°</td><td>pad, 5°</td><td>pad, 0°</td><td>pad</td></tr>
+<tr><td>root compliance only</td><td>pad</td><td>pad, 21°</td><td>pad, 9°</td><td>pad, 3°</td><td>pad, 0°</td><td>pad</td></tr>
+</tbody></table></div>
+<p>The root finger never went into the web, kept the pad tilt under 10° on the 25 and 40 mm balls, moved the object less than a millimetre per extra newton, and gained about 0.2 N of pad force per newton of cable. Its pull-out force is lower, 1.2 to 2.6 N against 3 to 5 N for the hooking finger, because nothing hooks any more. That is the point. The grasp is friction-limited, which means grip force has to be commanded, which is exactly what the paper's controller is for.</p>
+
+<h2>02 / The obvious fix makes it worse</h2>
+<p><strong>The intuitive cure for a pad that arrives tilted inward is to splay the fingers outward at rest.</strong> We swept that. Tilt went <em>up</em> with splay, and by 18° of splay most objects dropped.</p>
+<p><img loading="lazy" src="presplay.jpg" alt="Pad tilt versus object size for four pre-splay angles: tilt rises with outward splay and crosses the friction angle"></p>
+<p>The reason is where the bending happens. Splaying at the base means the finger has further to travel, and the extra travel is bent at the knuckle, which sits higher than the base. The knuckle rotation needed to make up the splay is larger than the splay itself, so the net tilt grows. A sweep that takes ninety seconds saved a print run, and it moved the design rule from "splay the fingers" to "put the compliance as low as possible."</p>
+
+<h2>03 / Two fingers or three</h2>
+<p><strong>The interference worry is right for soft tips and wrong for stiff ones.</strong> Two log-spiral tips do collide on an 8 mm ball, and the collision ejects it. With a stiff pad the tip-to-tip contact becomes a benign stop, and the two coplanar fingers hold the 8 mm ball and the 8 mm pen in both orientations.</p>
+<p><img loading="lazy" src="pinch-results.jpg" alt="Bar charts over six objects and six configurations: pad tilt, drift after release, pad force per cable newton, and pull-out force"></p>
+<p>Two other layouts lost on the same bench:</p>
+<ul>
+<li><strong>Offsetting the pair so they pass each other</strong> looks like a way around the collision. At 8 mm offset the fingers straddle anything under 15 mm and never touch it.</li>
+<li><strong>Three identical fingers, a pair opposed to one</strong>, won only on the 40 mm ball: 2° tilt and 3.6 N to pull out, against 1.2 N for the pair. But the pair missed the 8 mm objects unless it toed in, and toeing in makes the pair collide with the centre finger. Our earlier CAD did exactly that: with 10° of toe-in the fingertips cross the thumb's plane, and at the drawn grasp height the open gap was about a millimetre, which is why the old simulation's object spawned already embedded in a finger. Three fingers earn their keep once the pair can be spread on command, and that is a later version.</li>
+</ul>
+
+<h2>04 / A fixed thumb</h2>
+<p><strong>An excavator thumb is a tempting simplification:</strong> one rigid post, one articulated finger that closes onto it, one actuator, and a fixed reference the slip estimator can read against. The bench took ten minutes to extend.</p>
+<p><img loading="lazy" src="fixed-thumb.jpg" alt="One finger closing a 25 mm ball against a fixed rigid post: the log-spiral finger hooks over the ball, the root finger presses it against the post as a lever"></p>
+<p>It works with the root finger, which held everything from 8 to 25 mm against the post (the 40 mm ball no longer fits the gap). But the pad tilt roughly doubled compared with two fingers, 18° instead of 9° on the 25 mm ball, because one finger now travels the whole gap. Two ways to buy that back: pin the thumb at several angles the way excavator thumbs are, so the gap is set per object class, or replace the soft finger with a phalanxed linkage finger whose distal segment stays parallel to the thumb face as it closes. That second option is the pinch-preshaping condition from Birglen's underactuated-finger work, which we are already tracing for a different effector, and it makes the tilt zero by construction rather than small by proportion.</p>
+
+<h2>What changed in the code, and what didn't</h2>
+<p><img loading="lazy" src="digits.jpg" alt="Three printable finger variants side by side: the as-printed log-spiral, the stiff-pad graded web, and the root-compliant graded web"></p>
+<ul>
+<li><strong>The simulation was quietly wrong before this.</strong> It used one spring stiffness for every joint, which makes the finger curl base-first. The printed part curls tip-first. Stiffness is now derived per joint from web width times thickness cubed, so the model bends the way the print does. The hook that causes pull-in was invisible with uniform springs.</li>
+<li><strong>One new parameter.</strong> A per-joint web profile on the digit definition, used by the part builder, the assembly viewer and the physics. The three fingers above differ only in that tuple.</li>
+<li><strong>Nothing physical changed.</strong> Three finger variants and four layouts were compared on six objects in about an hour of compute, and the design rule came out with numbers attached.</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Finding</th><th>Found by</th></tr></thead>
+<tbody>
+<tr><td>Log-spiral tip-first curl makes grip force fall as tension rises (the hook)</td><td>physics bench, dN/dT metric</td></tr>
+<tr><td>Web pull-in is a friction-cone condition on pad tilt</td><td>physics bench, contact-normal tilt vs friction angle</td></tr>
+<tr><td>Pre-splaying the fingers makes tilt worse</td><td>parameter sweep</td></tr>
+<tr><td>Offset fingers straddle small objects</td><td>physics bench, object never contacted</td></tr>
+<tr><td>Earlier three-digit CAD collides with itself and has a 1 mm open gap</td><td>physics bench with inter-digit collisions turned on</td></tr>
+<tr><td>Simulation springs were uniform; real webs are not</td><td>reading the part definition against the model</td></tr>
+<tr><td colspan="2"><strong>Parts printed to find all six: 0</strong></td></tr>
+</tbody></table></div>
+
+<h2>What the bench cannot tell us</h2>
+<p><strong>The simulation is a cache of reality, and this cache has known gaps.</strong> The units are rigid boxes with lumped hinges, contact is MuJoCo's regularised soft-contact model, friction was one assumed value, the objects were spheres and cylinders, and each cell was one placement with no jitter. The numbers are trends. The first print of the two-finger root hand goes on a bench with a marked pad and a hanging load, and the first thing we measure is migration.</p>
+
+<h2>Who did what</h2>
+<p><strong>A person asked the two questions and made the design call; the agent did the engineering.</strong> We described the pull-in problem and our uncertainty about two versus three fingers, and later floated the fixed-thumb idea. An agent working through our effector-simulation skill built the bench from the existing part definitions, found and fixed the stiffness-fidelity bug, ran the sweeps, rendered the montages, and wrote up the findings with the caveats. The recommendation, two coplanar root-compliant fingers on the existing single-capstan drive, is the one we are printing.</p>
+<p>The bench, the finger definitions and the full write-up with every number live together in our effector library (not yet public; the grasp-simulation skill it runs on is open at <a href="https://github.com/punkfab/effector-sim">punkfab/effector-sim</a>). Got a mechanism that should be proven before it's built? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
