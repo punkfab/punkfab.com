@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Two agents, one finger: Claude&#x27;s slip gripper and Astra&#x27;s printable frame — PUNKFAB log</title>
+<meta name="description" content="Claude and Astra built the same one-finger slip gripper and finished different jobs: Claude turned it into a measured instrument, Astra rebuilt the housing so it prints. A third pass compares the two trees from the CAD and the sim, and finds three print fixes that moved the mechanism." />
+<meta property="og:title" content="Two agents, one finger: Claude&#x27;s slip gripper and Astra&#x27;s printable frame" />
+<meta property="og:description" content="Claude and Astra built the same one-finger slip gripper and finished different jobs: Claude turned it into a measured instrument, Astra rebuilt the housing so it prints. A third pass compares the two trees from the CAD and the sim, and finds three print fixes that moved the mechanism." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/two-agents-one-finger/astra-grasp.png" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">build notes · two agents, one design</p>
+  <h1>Two agents, one finger: Claude&#x27;s slip gripper and Astra&#x27;s printable frame</h1>
+  <p class="meta">2026-09-26 · Dan Newcome · comparison written by Grok over Claude's and Astra's trees · also on <a href="https://dnuke.com/blog/posts/2026-09-26_two-agents-one-finger/">dnuke.com</a></p>
+  <article class="post">
+<p><strong>Claude and Astra built the same gripper, and they finished different jobs.</strong> The machine is the smallest one that can test a claim in our slip paper: a single root-compliant finger closes on a rigid post, one Feetech STS3215 winds one cable, and servo current is supposed to carry both the grip force and the onset of slip. That only means something if the object stays on the pads. <a href="https://punkfab.com/blog/pad-or-web/">An earlier simulation study</a> had already thrown out a curling soft finger, because it hooked objects into the palm and grip force fell as tension rose. Both agents kept that conclusion. Claude turned it into an instrument and measured it. Astra took Claude's finished design and rebuilt the housing so it would print.</p>
+<p>They still look like one machine. The finger is 95 mm long in both, the hinges are the same two 0.8 mm TPU webs, the post face is in the same place, and the servo horn pattern is unchanged. Three of Astra's print fixes moved the mechanism. The grasp numbers were not run again. Nothing in either folder has been printed.</p>
+<h2>The shared machine</h2>
+<p><strong>Compliance stays at the root, and everything past it is a rigid lever.</strong> A follow-up sim on this finger showed why the lever cannot be TPU: past contact, 20 N of cable tension bent a solid or thick-web TPU lever about 20° and the tip hooked over the object anyway. So both designs are two materials. A TPU 95A flexure, two living hinges and no cable channel. A PETG lever with a cable horn, so the open-air span from the deck to the horn stands off the hinges and gives them a real moment arm. A small TPU pad, glued into a recess. A PETG post whose face plate is the swappable friction surface. The hand points down, so gravity pulls the object out and anything held is the finger's doing.</p>
+<p>The finger profile is the same SpiRobs discretization in both folders (Wang, Freris and Wei, <em>Device</em>, 2025): eight units, ratio 0.90, 32° notches, only the first two joints left thin. Seat at +27 mm, post face at −15 mm, objects from 10 to 30 mm, a 25 mm ball as the picture. That inheritance is explicit in Astra's parameters. Astra did not re-derive the finger. It re-derived the thing the finger bolts to.</p>
+<h2>Claude's version: the instrument</h2>
+<p><img loading="lazy" alt="Claude's gripper in the grasp pose: a solid rectangular housing, a tall post with a face plate, and a bent finger pressing a ball. The cable is not drawn." src="claude-grasp.png" /></p>
+<p><strong>The housing is a block with a servo bay carved out of it.</strong> One 84 × 68 × 50 mm body. The solid is 216 cm³, three quarters of that bounding box, plus an 8 mm wrist plate. Body and plate together are 253.6 cm³. The servo drops in from below. A 3 mm deck bridges a 26 mm bay. The cable channel runs from the drum to a point on the underside of the finger foot, 6 mm below the deck, and the foot is solid there: the flexure has screw holes and no cable hole. The straight line Claude uses as the open-air span starts at that buried mouth and runs out through the flexure on its way to the horn. The post is exported standing, 101 mm tall, which is the tallest mesh in the set. Eight parts, 299 cm³ of solid all together.</p>
+<p>Two fastener details are drawn as if they work and do not. The face plate's own description calls the screw holes countersunk. The solid is a pair of straight 2.9 mm cylinders through 1.5 mm of plate. The foot and the deck are both drilled 2.7 mm for an M2.5. The screw is 2.5 mm across the threads, so both holes are clearance, and the joint has no material for a thread to bite. The same 2.7 mm hole is drilled through the TPU tenon, and the lever screws into it from the sides with no nut.</p>
+<p><strong>The physics is why the block exists, and the physics is real.</strong> A MuJoCo bench builds the finger from the same parameters, drives the tendon as a position actuator, and treats servo current as an observed force. Closing to about 3 N of cable, hand down, μ = 0.6 assumed:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Object</th>
+<th>Where it sits</th>
+<th>Pad tilt</th>
+<th>Pad force</th>
+<th>dN/dT</th>
+<th>Pull-out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ø10 ball</td>
+<td>pad</td>
+<td>29°</td>
+<td>1.14 N</td>
+<td>0.73</td>
+<td>3.6 N</td>
+</tr>
+<tr>
+<td>Ø20 ball</td>
+<td>pad</td>
+<td>18°</td>
+<td>1.28 N</td>
+<td>0.53</td>
+<td>3.5 N</td>
+</tr>
+<tr>
+<td>Ø25 ball</td>
+<td>pad</td>
+<td>13°</td>
+<td>1.35 N</td>
+<td>0.48</td>
+<td>3.3 N</td>
+</tr>
+<tr>
+<td>Ø30 ball</td>
+<td>pad</td>
+<td>7°</td>
+<td>1.39 N</td>
+<td>0.42</td>
+<td>2.9 N</td>
+</tr>
+</tbody>
+</table></div>
+<p>No object was pulled into the web. Pad force is linear in tendon force over the range they swept: <em>N</em> = 0.57·<em>T</em> − 0.47 on a 15 mm ball (R² 0.994) and <em>N</em> = 0.52·<em>T</em> − 0.32 on a 25 mm ball (R² 0.998), monotonic from 1.2 to 6.9 N. With the servo holding position, a hanging load raises the servo force by about 0.4 N at 90% of the slip load, and the tendon length moves about 0.15 mm. The object starts moving before it drops, because the compliant root carries it. Those two signals, the hold level and the rise under load, are the paper's friction-margin estimator. They belong to this cable route and this pad position.</p>
+<p>Alongside the sim, a mesh check caught six defects that watertight-and-single-body tests had passed: a tenon pocket that left 0.06 mm lever walls, a 0.4 mm wall between a cable passage and the pad recess, horn-screw bores breaking out of a 16 mm drum, a spool hub overlapping its well by 374 mm³, a deck that measured 1.3 mm, and a flexure whose stepped back faces hovered off the bed. All six were fixed in the solids above. The check's pass gate is the 5th percentile of wall samples, and on the fixed meshes that percentile is fine. The minimum sample is still 1.11 mm on the body, against a 1.2 mm limit the check states. A coarse support estimate puts 45 cm³ of support on the body, a fifth of the part, which is that bridged bay, and 27% of the spool, which is the flange ring over the groove. Claude's notes accept the 0.8 mm hinge webs, the 26 mm bridge, and that flange. The cable check tests the span against the post, the plate, the lever and the object. It does not test the span against the flexure, which is the solid the line passes through. A countersink that was never cut, a post printed on end, and a screw hole with no thread are all outside that gate.</p>
+<h2>Astra's version: the print</h2>
+<p><img loading="lazy" alt="Astra's gripper in the grasp pose: an open bolted frame with windowed side rails, an orange root flexure, a grey lever, a gold face plate, a green ball, and a red cable running in open air from the deck to the horn. The servo shows through the rail window." src="astra-grasp.png" /></p>
+<p><strong>Astra kept the finger program and replaced the block with four flat pieces.</strong> A 10 mm deck, two windowed rails, and the wrist plate. The servo sits in cradle pads on the rails. There is no bay ceiling. The cable guide is a short 3.4 mm diagonal bore, open at both ends, sized for a PTFE liner, exiting on the deck beside the foot instead of inside it. The spool is two prints: a tapered core, drum-end down, and a flat flange the horn screws clamp on, so nothing bridges a groove. The lever's tenon pocket is an open saddle with one through-bolt, a nut, and a washer against the TPU. The tenon shares the flexure's flat back, so it sits on the bed. The hinge notches cut through the full preceding unit, instead of stopping on the taper and leaving a thin lip. The post exports on its back, 12 mm tall, recess up. The face plate is 2.4 mm and the countersink is actually in the solid. The foot pilots are 2.1 mm, and the deck holes they pass through are 2.9 mm with countersinks, which is a clearance hole in the clamped part and a thread-forming pilot in the foot. The frame is tied with four M3 × 65 mm through-bolts and nuts on the deck, so nothing is threaded into the end of a stack of layers.</p>
+<p><img loading="lazy" alt="Astra's eleven parts in print orientation, laid out flat: deck, two rails, wrist plate, root flexure and pad in orange TPU, lever, post lying on its back, face plate, capstan core and a separate flat flange." src="astra-print.png" /></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>Claude</th>
+<th>Astra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frame, solid volume</td>
+<td>body + wrist plate, 253.6 cm³</td>
+<td>deck + two rails + plate, 126.4 cm³</td>
+</tr>
+<tr>
+<td>Every printed solid</td>
+<td>299 cm³, 8 parts</td>
+<td>172 cm³, 11 parts</td>
+</tr>
+<tr>
+<td>Envelope</td>
+<td>84 × 68 × 58 mm</td>
+<td>78 × 64 × 65 mm</td>
+</tr>
+<tr>
+<td>Tallest exported mesh</td>
+<td>post, standing, 101 mm</td>
+<td>rail, 27 mm</td>
+</tr>
+<tr>
+<td>Cable</td>
+<td>bored channel from inside the foot</td>
+<td>open 3.4 mm guide on the deck, PTFE liner</td>
+</tr>
+<tr>
+<td>Spool</td>
+<td>one piece, flange over the groove, 7.4 cm³</td>
+<td>tapered core + flat flange, 8.5 cm³</td>
+</tr>
+<tr>
+<td>Lever joint</td>
+<td>closed pocket, two side screws into a 2.7 mm TPU hole</td>
+<td>open saddle, one through-bolt, nut, washer</td>
+</tr>
+<tr>
+<td>Tenon on the print</td>
+<td>2.79 mm off the flat back</td>
+<td>shares the back face; the lever moves out with it</td>
+</tr>
+<tr>
+<td>Hinge notches</td>
+<td>stop at the tapered unit</td>
+<td>cut through the preceding unit</td>
+</tr>
+<tr>
+<td>Face plate</td>
+<td>1.5 mm, straight holes</td>
+<td>2.4 mm, countersunk</td>
+</tr>
+<tr>
+<td>Frame screws</td>
+<td>M3 into the body</td>
+<td>M3 × 65 through-bolts, nuts on the deck</td>
+</tr>
+</tbody>
+</table></div>
+<p>Volumes are CAD solids from the exported meshes, not slicer filament. The half-material claim is the frame: 126.4 cm³ against 253.6. The finger, pad, post and spool are 45 cm³ in both designs. The spool went up by about a cubic centimetre, because the flange is now its own disc. The 127 cm³ that disappeared is the brick. The price is three extra parts, four long bolts, and a frame 7 mm taller so the deck can be a separate plate. The tallest thing on the printer goes from 101 mm to 27 mm.</p>
+<p><strong>Astra's checker covers assembly, and it covers the whole closing motion.</strong> All eleven meshes have to be one watertight solid, sitting on Z = 0, with a real patch of bed contact. The four through-bolts have to clear the deck, the rail they pass, and the wrist plate. Rigid parts are intersected open, at five ball diameters from 10 to 30 mm, and at five poses between open and the smallest ball. The ball has to touch the finite pad and the finite face plate. The cable span is tested against every solid, and the approach into the drum is tested against the hub-side taper, stopping short of the millimetre where the cable is supposed to meet the spool. Wall thickness, support volume, and MuJoCo are Claude's checker. Astra's notes say the current-to-grip and slip results have not been carried over, and that no slicer run has confirmed the orientations.</p>
+<h2>Three print fixes that change the grasp</h2>
+<p><strong>Putting the tenon on the bed moves the pad.</strong> On Claude's flexure the flat back is the print face and the tenon, centered on the top unit, stops 2.79 mm short of it, so the tenon is printed in the air. Astra shifts the tenon out to the back face. The lever is bolted to the tenon, so the lever and the pad move 2.79 mm with it, away from the post. The open gap at the pad face goes from 36.7 mm to 39.5 mm. In the pinch study, pad tilt on this one-finger layout scaled with how far the finger had to travel to cross the gap. A wider gap is the direction that made tilt worse. The finger still reaches 95 mm. It just starts further from the object.</p>
+<p><strong>Moving the cable exit raises the moment arm, and evens it out.</strong> Both hinges sit on one line, 8.6 mm toward the back of the finger, because the flush back puts the web at a constant X. Claude's moment-arm function draws a line from the channel mouth under the foot, 2.8 mm inboard of the finger centre and 6 mm below the deck, up to the horn. The perpendicular distance from that line to the two hinges is 16.0 mm and 19.2 mm, over a 53 mm span. That is the "16 to 19 mm" in Claude's notes, and it is the line that passes through the flexure. Astra's exit is a real point on the deck, beside the foot, and the run up to the horn is 47 mm and nearly vertical. Both hinges then see 20.4 mm and 20.3 mm. More arm, and the two hinges match. Whether that transmission survives contact is exactly what the old bench would have to be asked again.</p>
+<p><strong>The recut notches change the hinge the sim has been treating as a hinge.</strong> Claude's notch stops at the face of the tapered unit and leaves a thin lip at the mouth. Astra cuts the notch through the wider unit below, so the web is the only material left. The rigid-band model used for clearance, and the torsional springs in MuJoCo, both assume a hinge of a known stiffness at a known place. A different web outline is a different spring, and <em>K</em> of these hinges was already an assumption waiting on a bench measurement.</p>
+<p>Those three go in opposite directions. A larger moment arm buys more pad force per newton of cable. A wider gap costs pad tilt, which is what pushes an object off the friction cone and into the web. A different notch changes the stiffness that sets how far the lever actually swings. Claude's fit lines and slip traces are measurements of the first geometry. Astra's README is right to refuse them. It does not replace them.</p>
+<h2>Where that leaves the build</h2>
+<p><strong>The printable machine and the measured machine are no longer the same solid.</strong> A first fit print is Astra's set: 27 mm tallest part, a cable path you can reach with a liner, screws that have a part to thread into, countersinks where the notes claim them, and a clearance check across the closing range rather than one grasp. Using any of those parts to claim a friction margin means pointing the existing MuJoCo bench at the new cable exit, the shifted lever, and the recut notches, and reading dN/dT and pad tilt again. Hinge stiffness, the 2.1 mm pilots in the chosen TPU and PETG, servo ears and the connector (both models use a plain box), and whether STS3215 current can see a newton of cable on a 20 mm drum, are unmeasured on both. One newton of grip is about 0.7% of that servo's stall. If the current is too coarse, the drum wants to be larger, or the servo wants to be the smaller STS3032. That question is older than either housing.</p>
+<h2>Who did what</h2>
+<p><strong>Each agent closed the half of the loop it was aimed at.</strong> Claude, in <code>gripper-finger-post</code>, took the pinch-study result and made the effector: the two-material finger, the horn, the open-air span, the grasp and slip benches, and a manufacturability pass that fixed six mesh defects. Astra, in <code>gripper-finger-post-astra</code>, started from that folder and took print orientation as the specification: the open frame, the split spool, the accessible guide, the bed-flat tenon, the real countersinks, and a motion check from open to a 10 mm ball. This note is a third pass over both trees. The volumes and the mesh heights are measured from the exported STLs. The moment arms and the pad gap are computed from the same formulas each <code>finger.py</code> uses. The grasp table is Claude's published sim, quoted because it is the result Astra's geometry can no longer claim.</p>
+<p>The two folders sit side by side in the effector library, which is not public yet. The grasp-simulation skill the benches run on is at <a href="https://github.com/punkfab/effector-sim">punkfab/effector-sim</a>.</p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

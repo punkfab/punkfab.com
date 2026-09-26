@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The slip gripper as an open frame that prints flat — PUNKFAB log</title>
+<meta name="description" content="Astra took Claude&#x27;s one-finger slip gripper and rebuilt the housing for the printer: a bolted frame of flat parts instead of a solid block, half the modeled material, a 27 mm tallest part instead of 101 mm, an accessible cable guide, real countersinks and screws with something to thread into. Prototype CAD, not yet printed." />
+<meta property="og:title" content="The slip gripper as an open frame that prints flat" />
+<meta property="og:description" content="Astra took Claude&#x27;s one-finger slip gripper and rebuilt the housing for the printer: a bolted frame of flat parts instead of a solid block, half the modeled material, a 27 mm tallest part instead of 101 mm, an accessible cable guide, real countersinks and screws with something to thread into. Prototype CAD, not yet printed." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/astra-printable-frame/assembly-grasp.png" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">build notes · print-oriented rework</p>
+  <h1>The slip gripper as an open frame that prints flat</h1>
+  <p class="meta">2026-09-26 · Dan Newcome · design and notes by Astra (Codex), reworking Claude's <code>gripper-finger-post</code> · compared in <a href="/blog/two-agents-one-finger/">Two agents, one finger</a></p>
+  <article class="post">
+<p>A print-oriented variation of <code>gripper-finger-post</code> (Claude's design, in our effector library):
+one rigid post, one root-compliant TPU finger, and an STS3215 cable drive.
+The enclosure becomes an open, bolted frame made from flat-printing parts.
+<strong>Prototype CAD; not yet printed or bench-tested.</strong></p>
+<p>Write-up against the parent design: <a href="/blog/two-agents-one-finger/">Two agents, one finger</a>.</p>
+<p><img loading="lazy" alt="Grasp assembly" src="assembly-grasp.png" /></p>
+<h2>What changed</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Original</th>
+<th>Astra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Solid housing with a 26 mm bridge above the servo</td>
+<td>Separate deck, two windowed rails, and wrist plate; no servo-bay ceiling to bridge</td>
+</tr>
+<tr>
+<td>Housing + wrist plate: 253.6 cm³ of CAD solid</td>
+<td>About 126 cm³: approximately 50% less modeled material</td>
+</tr>
+<tr>
+<td>84 × 68 × 58 mm housing/mount envelope</td>
+<td>78 × 64 × 65 mm; narrower, but 7 mm taller to fit the separate deck</td>
+</tr>
+<tr>
+<td>Enclosed cable passage terminating inside the solid flexure foot</td>
+<td>Accessible diagonal guide exiting beside the foot; nominal lead-in clears the spool taper</td>
+</tr>
+<tr>
+<td>One-piece spool with a projecting flange</td>
+<td>Tapered core plus a separately printed flat flange, clamped by the horn screws</td>
+</tr>
+<tr>
+<td>Closed lever pocket and thin pad-recess lips</td>
+<td>Open tenon saddle and side-open pad seat; one through-bolt and nut</td>
+</tr>
+<tr>
+<td>Flexure tenon suspended above its print face</td>
+<td>Tenon shares the flat back; lever shifts outward 2.79 mm</td>
+</tr>
+<tr>
+<td>Thin residual lips at tapered hinge notches</td>
+<td>Notches cut through the full preceding unit</td>
+</tr>
+<tr>
+<td>Post exported standing</td>
+<td>Post exported on its back, with face recess upward</td>
+</tr>
+<tr>
+<td>Plate holes described as countersunk, but cylindrical</td>
+<td>Actual countersinks in a 2.4 mm face plate</td>
+</tr>
+</tbody>
+</table></div>
+<p>The material comparison uses solid CAD volumes, not slicer filament estimates.
+This trades three extra printed pieces (11 total instead of 8) and long frame
+bolts for less bulk, smaller print heights, and access to the servo and cable.
+Finger reach remains 95 mm; the open pad gap is 39.5 mm. The 10–30 mm object
+range is checked geometrically. The servo and wrist horn patterns are inherited
+nominal dimensions, not new measurements of hardware.</p>
+<h2>Build and inspect</h2>
+<p>Use Python with <code>build123d</code>, <code>numpy</code>, <code>trimesh</code>, and <code>rtree</code> installed. This design
+was built using build123d 0.8.0. OpenSCAD and <code>xvfb-run</code> are needed only for PNGs.</p>
+<pre><code class="language-bash">make -C effectors/gripper-finger-post-astra all
+make -C effectors/gripper-finger-post-astra render
+</code></pre>
+<p><code>all</code> writes eleven <strong>print-oriented STLs</strong>, <code>parts.json</code>, open/grasp assembly
+STLs, an open assembly STEP, colored OpenSCAD scenes, and <code>verification.json</code>
+to <code>exports/</code>. Each individual part sits on Z=0. Assembly STLs include mating
+surfaces and are for inspection, not printing. The grasp scene includes the
+example ball; the dark servo block in the colored scenes is a reference envelope.
+The print-layout scene is an overview, not a packing for a particular printer bed.</p>
+<p><img loading="lazy" alt="Parts in print orientation" src="print-layout.png" /></p>
+<h2>Print</h2>
+<p>Start with a 0.4 mm nozzle, 0.2 mm layers, and four perimeters on rigid parts.
+PETG is the default rigid material; PLA is suitable for initial fit prototypes.
+Use TPU 95A for the root and finger pad. Print the root solid, and inspect both
+0.8 mm hinge webs in the slicer before printing.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>STL</th>
+<th>Exported print orientation</th>
+<th>Detail to inspect in the slicer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deck</code></td>
+<td>Flat underside down, sockets up</td>
+<td>Short 3.4 mm diagonal liner bore; countersinks at the bed</td>
+</tr>
+<tr>
+<td><code>rail_left</code>, <code>rail_right</code></td>
+<td>Outer face down, cradle pads up</td>
+<td>Long M3 bores have 45° roofs; clear them with a drill if needed</td>
+</tr>
+<tr>
+<td><code>arm_mount</code></td>
+<td>Horn recess up</td>
+<td>Bottom-facing wrist screw seats have 45° countersinks</td>
+</tr>
+<tr>
+<td><code>root_flexure</code></td>
+<td>Flat back and tenon down, notches up</td>
+<td>Two intentional 0.8 mm hinge webs; small transverse bores</td>
+</tr>
+<tr>
+<td><code>lever</code></td>
+<td>Closed side down, open saddle up</td>
+<td>1.85 mm minimum saddle walls; 1.8 mm horn bore</td>
+</tr>
+<tr>
+<td><code>post</code></td>
+<td>Back down, friction-plate recess up</td>
+<td>Small horizontal foot pilots</td>
+</tr>
+<tr>
+<td><code>pad</code>, <code>face_plate</code></td>
+<td>Flat, countersinks up where present</td>
+<td>Pad glues into lever; plate stays replaceable</td>
+</tr>
+<tr>
+<td><code>capstan_core</code></td>
+<td>Drum end down, horn recess up</td>
+<td>45° expanding taper; small transverse cable anchor</td>
+</tr>
+<tr>
+<td><code>capstan_flange</code></td>
+<td>Flat</td>
+<td>No bridge over a spool groove</td>
+</tr>
+</tbody>
+</table></div>
+<p>Designed to avoid large supports. Small bores still need short bridging, and
+45° surfaces depend on cooling and layer settings. Review the slice rather than
+adding support inside the cable guide or TPU notches. No slicer or physical print
+has yet verified these settings.</p>
+<h2>Hardware and assembly</h2>
+<p>In addition to the STS3215 and its matching metal horn:</p>
+<ul>
+<li>4 × M3 × 65 mm frame bolts with heads fitting the Ø6 × 3 mm underside recesses,
+  plus M3 nuts on the deck. Nut bearing surfaces are flat; washers are optional.</li>
+<li>4 × M3 horn screws through the capstan stack. The printed stack above the horn
+  seat is 16.5 mm; choose length for the actual horn's thread depth (start by
+  checking M3 × 20 mm).</li>
+<li>4 × M3 countersunk screws for the wrist horn; determine length from that horn's
+  thread depth. The plate is 8 mm thick with a 2 mm horn recess.</li>
+<li>4 × M2.5 × 8 mm countersunk screws for the two feet and 2 × M2.5 × 8 mm
+  countersunk screws for the friction plate. These use 2.1 mm printed pilots;
+  test screw fit in the selected material before committing to the assembly.</li>
+<li>1 × M2.5 × 12 mm lever bolt, nut, and a small washer against the TPU tenon.</li>
+<li>
+<p>Approximately 0.8 mm low-stretch tendon; short 3 mm OD / 2 mm ID PTFE liner
+  in the 3.4 mm deck guide; adhesive for the pad and liner; thin servo-fit shims.</p>
+</li>
+<li>
+<p>Fit the post and flexure feet to the deck, installing their screws from below.
+   Heads must sit flush so the right rail can seat against the deck.</p>
+</li>
+<li>Glue the pad to the lever. Seat the tenon in the open saddle and install its
+   through-bolt, washer, and nut without crushing the TPU. Fit the friction plate.</li>
+<li>Attach the wrist plate to the arm horn before closing the frame; access to
+   these screw heads is through the inside of the frame.</li>
+<li>Assemble the capstan core and flange on the servo horn. Thread and knot the
+   tendon using the transverse anchor and centre access bore before installation.
+   Keep the knot clear of the horn and screw paths.</li>
+<li>Place the servo between the rail cradle pads, then add deck and wrist plate.
+   Insert the four long bolts from the wrist side and tighten the nuts on the
+   deck evenly. Nominal servo clearances are 0.5 mm at each side/end in X/Y,
+   1 mm above, and 0.8 mm below; shim to remove movement without distorting the case.
+   The model does not include actual servo ears or connector protrusions: test-fit
+   those before final assembly. The open front/rear provide cable access.</li>
+<li>Line the accessible deck guide with PTFE, smooth its mouth, and feed the
+   tendon up to the lever horn. Knot above the horn and set light pretension.
+   Turn the spool by hand through its intended take-up before energizing it;
+   confirm the winding stays in the groove and the liner does not move.</li>
+</ul>
+<h2>Validation and limits</h2>
+<p><code>make verify</code> rebuilds and checks all eleven printable meshes for one watertight
+solid and flat bed contact, the four frame-bolt paths, pairwise rigid-part
+interference in the open pose and five object grasps, and five intermediate
+closing poses. It also checks actual contact with the finite pad and face plate,
+the cable span against the flexure and rigid parts, and the cable guide/approach
+against the servo, frame, and spool. Adjacent rigid flexure bands are excluded
+from pairwise collision checks because their shared webs represent deforming TPU.
+Only the cable's final approach millimetre at the drum and 0.5 mm at the horn
+are excluded from the corresponding contact check.</p>
+<p>These are nominal CAD checks, not deformation, strength, fatigue, or winding
+simulations. The new cable exit, shifted lever, and revised notches change the
+mechanics. The original MuJoCo current/grip/slip results have <strong>not</strong> been carried
+over as results for Astra. Measure hinge stiffness, servo fit, cable tracking,
+and grip response on this build before using it for that experiment.</p>
+<p>Source is self-contained in this folder; generated exports remain gitignored.
+<code>params.py</code> is the dimensional source of truth. <code>build.py</code> handles print poses;
+<code>verify.py</code> and <code>kinematics.py</code> handle checks; <code>view.py</code> makes previews.
+The root-flexure concept derives from the sibling design's SpiRobs implementation
+(Wang, Freris &amp; Wei, <em>Device</em>, 2025).</p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
