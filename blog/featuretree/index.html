@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>featuretree: heuristic feature recovery for B-rep geometry — PUNKFAB log</title>
+<meta name="description" content="featuretree is a heuristic feature-recovery harness for B-rep geometry: it turns a STEP solid into an editable feature tree for FreeCAD, Onshape or build123d, and checks every recovery by rebuilding it. Run on every distinct NIST MBE PMI test geometry: 11 of 11 yield an editable tree, 3 verify above 99.6% IoU, and no incorrect tree was accepted." />
+<meta property="og:title" content="featuretree: heuristic feature recovery for B-rep geometry" />
+<meta property="og:description" content="Turn a STEP solid into an editable feature tree, and check every recovery by rebuilding it. Run on every distinct NIST test geometry: 11 of 11 yield a tree, 3 verify above 99.6% IoU, no incorrect tree accepted." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/featuretree/freecad-tree.png" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">build notes · featuretree</p>
+  <h1>featuretree: heuristic feature recovery for B-rep geometry</h1>
+  <p class="meta">2026-09-28 · Dan Newcome · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · preprint <a href="https://doi.org/10.5281/zenodo.22848792">10.5281/zenodo.22848792</a></p>
+  <article class="post">
+
+<p><strong>A STEP file imports into a parametric CAD system as one frozen lump.</strong> The design history is gone. There is no pad depth to change and no hole diameter to edit, only a boundary representation: faces, edges and surfaces. <a href="https://github.com/punkfab/featuretree">featuretree</a> is a heuristic feature-recovery harness for that B-rep geometry. It proposes a feature tree of sketches, pads, pockets, revolves and cuts, then checks the proposal by rebuilding it and comparing the result against the input. A tree that passes can be emitted as a native, editable model in FreeCAD, Onshape or build123d.</p>
+
+<p>The check is the point. Every recovery comes back VERIFIED, PARTIAL, or refused, and a PARTIAL tree is labelled as one. A silently wrong feature tree is worse than no tree, because you would edit it.</p>
+
+<p><strong>None of this is a new idea.</strong> Automatic feature recognition has been published since the early 1990s, and commercial CAD has shipped it for decades. What's missing is an open implementation you can call from code and point at FreeCAD or Onshape, neither of which recognises features on import. featuretree is that, plus an honest account of how well it works. The preprint says so up front, and its prior-art scan is in the repo.</p>
+
+<h2>How it works: heuristics propose, a rebuild decides</h2>
+
+<p><strong>The core heuristic is that most machined and printed parts are a 2D profile swept along an axis, plus holes and pockets.</strong> So recovery is cross-sectional:</p>
+
+<ul>
+<li><strong>Find candidate axes.</strong> Every face normal and cylinder axis is a candidate. Each one is scored by how many faces are inconsistent with a prism along it: angled walls, cross-holes, anything spherical or freeform.</li>
+<li><strong>Read the profile.</strong> Rotate the best axes onto Z and slice. The section's outline becomes a sketch and a pad; its inner loops become through-holes; concave cylinders that stop short become blind holes. Parts that are bodies of revolution take a meridian section and a revolve instead.</li>
+<li><strong>Carve the rest.</strong> If the base extrude doesn't match, what's left over is carved away feature by feature. Each leftover lump is itself a profile along its own axis — a floor pocket, a through-web window, a cross-hole — and is recognised and cut in turn.</li>
+<li><strong>Rebuild and compare.</strong> The recovered tree is re-executed and compared with the input: volume within 0.5% and extents within 0.05 mm is VERIFIED; anything else is PARTIAL, with the residual reported. Several axes can look plausible, so featuretree builds a candidate per axis and the rebuild picks the winner. No heuristic score ever decides.</li>
+</ul>
+
+<p><img loading="lazy" alt="Volume of the reconstructed NIST CTC-01 solid plotted against features applied. It starts at a base envelope 155% above the target, drops sharply around feature 30, and settles into a narrow tolerance band around the target volume by about feature 45." src="carve-convergence.png" /></p>
+
+<p>That carving loop on NIST CTC-01: a base extrude 155% too big, brought down into the tolerance band over 54 operations. The verifier accepts only inside the band.</p>
+
+<p>The recovered tree refers to geometry symbolically — by feature name and query, never by a kernel's face or edge IDs — so the same tree drives FreeCAD, Onshape and build123d, and a human edit made in the GUI can be read back by name.</p>
+
+<h2>Coverage: every distinct NIST test geometry</h2>
+
+<p><strong>We ran every distinct part geometry in the <a href="https://www.nist.gov/ctl/smart-connected-systems-division/smart-connected-manufacturing-systems-group/mbe-pmi-0">NIST MBE PMI test-case models</a>: all five Combined Test Cases (CTC-01 to 05) and all six Fully-Toleranced Test Cases (FTC-06 to 11).</strong> We used NIST's "AP203 geometry only" exports, which are exact B-rep with no annotations. These are human-designed conformance parts, meant to be hard. That is the whole geometry set rather than a sample. NIST's five Simplified Test Cases reuse the FTC geometry with simpler annotations; everything NIST publishes that we did not run is listed after the results, with the reason.</p>
+
+<p><strong>Every part, every verification detail.</strong> A part is VERIFIED only if its rebuilt tree matches the input's volume to within 0.5% <em>and</em> its extents to within 0.05 mm; "Fails" says which test a PARTIAL part missed. IoU (intersection over union) is an independent check that uses no Boolean operations. The table is generated from the result files by <code>paper/figures/corpus_table.py</code>, so it cannot drift from the data.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Part</th><th>Verdict</th><th>Fails</th><th>Vol. error</th><th>Extent error (mm)</th><th>IoU (%)</th><th>Features</th><th>Recovered as</th></tr></thead>
+<tbody>
+<tr><td style="white-space:nowrap">CTC-01</td><td><strong>VERIFIED</strong></td><td>—</td><td style="white-space:nowrap">0.14%</td><td>0.0</td><td style="white-space:nowrap"><strong>99.82 ± 0.07</strong></td><td>54</td><td>extrude Z · 14 pockets, 10 holes</td></tr>
+<tr><td style="white-space:nowrap">CTC-02</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">62.19%</td><td>267.7</td><td style="white-space:nowrap">≥ 3.9</td><td>64</td><td>extrude Y · 2 regions</td></tr>
+<tr><td style="white-space:nowrap">CTC-03</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">41.46%</td><td>132.5</td><td style="white-space:nowrap">≥ 6.5</td><td>16</td><td>extrude Y</td></tr>
+<tr><td style="white-space:nowrap">CTC-04</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">2.43%</td><td>390.0</td><td style="white-space:nowrap">≥ 25.0</td><td>270</td><td>extrude Z</td></tr>
+<tr><td style="white-space:nowrap">CTC-05</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">51.80%</td><td>349.2</td><td style="white-space:nowrap">≥ 8.2</td><td>106</td><td>extrude Z</td></tr>
+<tr><td style="white-space:nowrap">FTC-06</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">31.85%</td><td>98.8</td><td style="white-space:nowrap">≥ 39.3</td><td>44</td><td>extrude Y · 17 pockets, 5 holes</td></tr>
+<tr><td style="white-space:nowrap">FTC-07</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">63.41%</td><td>30.2</td><td style="white-space:nowrap">≥ 30.3</td><td>52</td><td>extrude X · 2 regions</td></tr>
+<tr><td style="white-space:nowrap">FTC-08</td><td>PARTIAL</td><td>volume</td><td style="white-space:nowrap">32.61%</td><td>0.0</td><td style="white-space:nowrap">≥ 53.3</td><td>24</td><td>extrude X · 2 regions</td></tr>
+<tr><td style="white-space:nowrap">FTC-09</td><td><strong>VERIFIED</strong></td><td>—</td><td style="white-space:nowrap">0.19%</td><td>0.0</td><td style="white-space:nowrap"><strong>99.67 ± 0.05</strong></td><td>80</td><td>extrude Y</td></tr>
+<tr><td style="white-space:nowrap">FTC-10</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">20.80%</td><td>18.0</td><td style="white-space:nowrap">≥ 46.5</td><td>24</td><td>extrude Z</td></tr>
+<tr><td style="white-space:nowrap">FTC-11</td><td><strong>VERIFIED</strong></td><td>—</td><td style="white-space:nowrap">0.00%</td><td>0.0</td><td style="white-space:nowrap"><strong>100.00 ± 0.01</strong></td><td>2</td><td>revolve</td></tr>
+</tbody></table></div>
+
+<ul>
+<li><strong>11 of 11 parts yield an editable feature tree.</strong> None is refused.</li>
+<li><strong>3 of 11 are VERIFIED</strong> (one Combined, two Fully-Toleranced), each above 99.6% IoU with the input. FTC-11 is a two-feature revolve and should carry little weight.</li>
+<li><strong>No incorrect tree was accepted.</strong> That is the property that makes the output safe to edit, and it holds on a measurement that uses no Boolean operations.</li>
+<li><strong>The other 8 are PARTIAL:</strong> an editable tree for part of the geometry, labelled as such. We can put a floor under how much of each came back, from 3.9% to 53%, but not a ceiling. That is why the table says "≥".</li>
+<li><strong>Seven of the eight PARTIAL parts fail both tests.</strong> FTC-08 is the exception: its extents match exactly and it is 33% short on volume. CTC-04 is the reverse trap. It is within 2.43% on volume, but its extents are off by 390 mm. Every PARTIAL recovery has <em>less</em> volume than its input: when featuretree falls short it leaves material out, it does not invent it.</li>
+</ul>
+
+<p><img loading="lazy" alt="All eleven NIST parts, original STEP in grey beside the recovered tree in teal, each pair in the same registration. The three VERIFIED pairs, CTC-01, FTC-09 (a thin perforated plate) and FTC-11 (a ring), are visually identical. The eight PARTIAL recoveries range from most of the part (FTC-06 about 39%, FTC-10 about 46%, FTC-08 about 53% as two long rails) down to very little: CTC-02 and FTC-07 come back as two flat plates, CTC-03 as a single plate, CTC-05 (a flanged base with a post) as one small block, and CTC-04, close on volume, as a compact box unlike its long thin original." src="recovered-all.png" /></p>
+
+<p>All eleven, each recovery drawn in the registration its IoU was measured in. The picture makes the verdicts legible in a way the numbers don't. VERIFIED means indistinguishable. PARTIAL ranges from "most of the part is there" to "a plate". CTC-04 shows why volume alone is not a test: it is the closest PARTIAL part on volume, and it is plainly the wrong shape.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Published by NIST, not run</th><th>NIST set</th><th>Why</th></tr></thead><tbody>
+<tr><td>STC-06</td><td>Simplified</td><td>same geometry as FTC-06 (confirmed: volume and extents)</td></tr>
+<tr><td>STC-07</td><td>Simplified</td><td>same geometry as FTC-07 per NIST; does not import in OpenCASCADE</td></tr>
+<tr><td>STC-08</td><td>Simplified</td><td>same geometry as FTC-08 (confirmed: volume and extents)</td></tr>
+<tr><td>STC-09</td><td>Simplified</td><td>same geometry as FTC-09 (confirmed: volume and extents)</td></tr>
+<tr><td>STC-10</td><td>Simplified</td><td>same geometry as FTC-10 (confirmed: volume and extents)</td></tr>
+<tr><td>FTC-08 (tessellated)</td><td>Fully-toleranced</td><td>faceted surfaces, not exact B-rep; out of scope</td></tr>
+<tr><td>HTC</td><td>Hole</td><td>2024 model, not in the corpus download used; not evaluated</td></tr>
+<tr><td>MTC</td><td>Modified</td><td>2018 model, not in the corpus download used; not evaluated</td></tr>
+</tbody></table></div>
+
+<p><img loading="lazy" alt="FreeCAD 1.0 Part Design workbench. The Model tree on the left lists the recovered operations under Body: the base pad, blind0 through blind13, then pocket0, pocket1, cut2 through cut13 with their placement sketches. The 3D view on the right shows the rebuilt NIST CTC-01 part: an H-shaped plate with through-holes, two slots, a hexagonal boss, side cross-holes and embossed NIST lettering." src="freecad-tree.png" /></p>
+
+<p><strong>This is what VERIFIED means in practice.</strong> NIST CTC-01 is shown as a native FreeCAD Part Design document, built from the recovered tree. Every entry in the Model panel is a real, editable operation: the base extrude, fourteen blind holes, then pockets and cuts, each with its own placement sketch. Change a depth and the part rebuilds. FreeCAD's volume for this tree matches build123d's to within 0.3 mm³. Feature names are generated, not the designer's, because recognition recovers <em>an</em> equivalent history, not <em>the</em> history.</p>
+
+<h2>Getting the whole corpus through</h2>
+
+<p><strong>The first full run refused three of the eleven parts outright: CTC-02, FTC-07 and FTC-10.</strong> Those refusals looked principled, since those are the ugly parts, full of threads and blends. They weren't. They came from two conservative choices in the front end, not from the limits of the feature vocabulary.</p>
+
+<p>The first was the axis prefilter. Candidate axes with more than 40% non-conforming faces were thrown away before anything else happened. FTC-07 and FTC-10 carry modelled thread and blend geometry; their best axes score 55.0% and 47.7%, and the offending faces are almost entirely tori, cones and spheres. They were rejected before their cross-section was ever looked at. The threshold was measuring the presence of thread geometry, not the absence of a prismatic profile. CTC-02 failed at the next step: every sampled cross-section landed in a tapered region whose outline is ellipses and hyperbolas, the signature of slicing a cone off-axis.</p>
+
+<p>The second was the cross-section. A section that splits into separate regions at every height was treated as a failure. A disjoint section <em>does</em> describe some parts correctly, as several parallel prisms that one sketch and pad per region recovers exactly. The IR could already express that; the recogniser never tried. We raised the prefilter to 75% and added the multi-region path:</p>
+
+<div class="table-wrap"><table>
+<thead>
+<tr><th></th><th>First full run</th><th>Now</th></tr>
+</thead>
+<tbody>
+<tr><td>VERIFIED</td><td>3</td><td>3</td></tr>
+<tr><td>PARTIAL</td><td>5</td><td>8</td></tr>
+<tr><td>REFUSED</td><td>3</td><td><strong>0</strong></td></tr>
+<tr><td>FTC-08 volume error</td><td>52.6%</td><td>32.6%</td></tr>
+</tbody>
+</table></div>
+
+<p><strong>Loosening a heuristic was safe because acceptance is a separate stage, not because we got lucky.</strong> The rebuild-and-compare check never sees the prefilter threshold. So loosening it can only move a part from refused to PARTIAL or VERIFIED; it cannot create a false accept. That is the practical payoff of keeping recognition and acceptance apart. The heuristics can be as aggressive as you like, and the worst case is wasted compute. Had they been one scoring function, every threshold change would have been a soundness change. No false accept appeared. FTC-08, already recovering, improved by twenty points because the wider prefilter let a better axis win. Refusal is still reachable (a torus is still refused); this corpus just doesn't exercise it.</p>
+
+<p>Honesty requires one caveat on those three. For FTC-07, "no longer refused" is not "recovered well". It looks like it should be easy, since it is basically a box: an outer rectangle padded, then one pocket for the cavity. But it is a <em>molded</em> box, with about 1° of draft on every wall, inside and out, and a lip at the rim. Along its opening axis the cross-section is exactly the rectangular ring you'd expect. It just changes with depth, and the drafted corner rounds slice into ellipses, which the profile reader refuses. So featuretree falls back to an axis that cuts across the part, where the section is the two opposing side walls. The multi-region path recovers those two walls and nothing that joins them; the gallery shows two plates. The verifier reports PARTIAL, 63% short, which is the right call. We only saw what was going on because we rendered it.</p>
+
+<h2>Measuring it honestly</h2>
+
+<p><strong>The recogniser's own verdicts held up. The code measuring them was less trustworthy.</strong> Scoring the PARTIAL recoveries at all, which the first harness didn't do, surfaced a run of evaluation bugs:</p>
+
+<ul>
+<li><strong>Volume is a one-sided test.</strong> Over-cut and uncut material enter a volume difference with opposite signs and partly cancel. On CTC-01 the size of that cancellation moved from 1.56× to 1.01× between two versions of the recogniser, under a change not aimed at it. Nothing in a volume criterion bounds that term. IoU does not cancel, which is why the table reports it.</li>
+<li><strong>Half a recovery.</strong> A helper scored only the first solid of each reconstruction, so the multi-region parts were measured on one wall. The rendering caught it: FTC-07 drew as a single plate.</li>
+<li><strong>OpenCASCADE crashes.</strong> One bad Boolean killed a whole part's measurement, and one segfaulted the process outright. Every part is now measured in its own process, and a failed orientation costs only itself.</li>
+<li><strong>Booleans that return the wrong answer plausibly.</strong> This one matters most. IoU was first computed from an OpenCASCADE union. When the renders were drawn, FTC-10's recovery sat at right angles to its original under a caption claiming 74% overlap; recomputed, it was about 1%. On CTC-03 the error had a clean signature. The "union" came back equal to the larger operand, so IoU collapsed to the ratio of the two volumes and passed every range check with equality. Four of the eight PARTIAL figures were wrong this way.</li>
+</ul>
+
+<p><strong>So featuretree now measures IoU with no Boolean operations at all.</strong> It classifies 60,000 random points against both solids and reports a 95% interval. The check ships in the library as <code>iou_check.py</code>, with its own tests, and on the command line as <code>step_recognize.py part.step --iou</code>. On CTC-01 it reads <code>99.81% ± 0.07</code>. The three VERIFIED figures agree with the Boolean ones, as they must for near-identical solids; the PARTIAL ones are where the Booleans failed. The takeaway is narrower than "never use Booleans," but it is sharp. A Boolean-derived metric is safe to report only where something independent has confirmed it, and it is least safe on the recoveries that failed, which are exactly the ones you are trying to measure.</p>
+
+<p>A PARTIAL IoU is a lower bound: the recovery is placed by trying 24 axis-aligned orientations, which is not an optimal alignment. It can certify that a recovery is largely right, never that it is poor. The preprint's second version reported Boolean IoU for the PARTIAL parts; the figures here supersede it.</p>
+
+<h2>Limits</h2>
+
+<ul>
+<li><strong>Eleven parts.</strong> That demonstrates the contract on hard, standard geometry. It is not a success rate for parts in general.</li>
+<li><strong>The vocabulary is prismatic and revolved.</strong> Fillets and chamfers are left as small residuals, so a chamfered part can verify with sharp edges in its tree. Additive bosses, lofts, sweeps, freeform surfaces, and outlines with splines or ellipses come back PARTIAL. So does draft: there is no tapered pad or pocket yet, although FreeCAD and build123d both support one, and that is what FTC-07 needs.</li>
+<li><strong>One small curve can lose a whole axis.</strong> FTC-10 is a 31 mm plate, and its natural extrude direction is refused because of a single 1.8 mm conic edge, where the section cuts a small cone. It deviates from a straight line by 0.09 mm. Accepting such edges as chords unlocks the axis, and the base extrude becomes a proper envelope, 53% over. But carving then over-cuts to 68% short, because nothing checks an individual carve step against the part; only the final rebuild is checked, and it correctly rejects the result. FTC-10 needs both fixes, and CTC-01 needed neither. That, not the part's orientation in the file, is why one verifies and the other doesn't.</li>
+<li><strong>Equivalence, not intent.</strong> A VERIFIED tree rebuilds the part; it is not the designer's history, and its feature names are generated.</li>
+<li><strong>PARTIAL quality has a floor but no ceiling.</strong> Proper registration, rather than a 24-orientation search, is the single change that would most improve the evaluation.</li>
+<li><strong>Not yet run:</strong> NIST's Hole and Modified test cases.</li>
+</ul>
+
+<p>Code is at <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>, MIT. The paper, with the prior-art scan behind its deliberate lack of a novelty claim, is at <a href="https://doi.org/10.5281/zenodo.22848792">10.5281/zenodo.22848792</a>. Every number and image here regenerates from the commands in <code>paper/figures/README.md</code>.</p>
+
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
