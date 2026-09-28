@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The gate was the bug: a STEP feature recogniser from three refusals to none — PUNKFAB log</title>
+<meta name="description" content="featuretree refused three of eleven NIST conformance parts. The refusals were not the feature vocabulary — they were a 40% threshold and an assumption that a disjoint cross-section is a failure. Fixing both took the corpus to zero refusals with no false accept, because the verifier sits downstream of everything that was changed." />
+<meta property="og:title" content="The gate was the bug: a STEP feature recogniser from three refusals to none" />
+<meta property="og:description" content="featuretree refused three of eleven NIST conformance parts. The refusals were not the feature vocabulary — they were a 40% threshold and an assumption that a disjoint cross-section is a failure. Fixing both took the corpus to zero refusals with no false accept, because the verifier sits downstream of everything that was changed." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/the-gate-was-the-bug/carve-convergence.png" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">build notes · verified CAD recovery</p>
+  <h1>The gate was the bug: a STEP feature recogniser from three refusals to none</h1>
+  <p class="meta">2026-09-28 · Dan Newcome · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> · preprint <a href="https://doi.org/10.5281/zenodo.22848792">10.5281/zenodo.22848792</a></p>
+  <article class="post">
+
+<p><strong>A STEP file imports into a parametric CAD system as one frozen lump.</strong> The design history is gone: no pad depth to change, no hole diameter to edit. <a href="https://github.com/punkfab/featuretree">featuretree</a> recovers that history — sketches, pads, pockets, revolves — and gates every recovery by re-executing the recovered tree and comparing the result against the input. It answers VERIFIED, PARTIAL, or it refuses. The refusal matters more than the acceptance: a silently wrong feature tree is worse than no feature tree, because you would edit it.</p>
+
+<p>On the eleven-part NIST MBE conformance corpus it refused three parts outright — CTC-02, FTC-07 and FTC-10. That was the published result. The refusals looked principled: those are the ugly parts, full of threads and blends, and the honest thing for a recogniser to do with geometry outside its vocabulary is to say so.</p>
+
+<p><strong>The refusals were not the vocabulary. They were two thresholds in the front end, and neither one was load-bearing.</strong></p>
+
+<h2>What was actually blocking</h2>
+
+<p>The recogniser finds an extrude axis by counting how many faces are inconsistent with a prism swept along each candidate direction — angled walls, cross-holes, anything spherical or freeform. Axes with too many non-conforming faces were dropped. The threshold was 40% of faces.</p>
+
+<p>FTC-07 and FTC-10 are threaded parts. Their best axes score 47.7% and 55.0% non-conforming, and the offending faces are almost entirely tori, cones and spheres — which is to say, <em>modelled thread and blend geometry</em>. They were rejected before their cross-section was ever looked at. The threshold was measuring the wrong thing: presence of thread geometry, not absence of a prismatic profile.</p>
+
+<p>CTC-02 failed differently. It passed the axis gate at 32.9%, then died on the next step, which required the cross-section at some sampled height to be a single connected region. Sampling six heights, every one of them landed in a tapered upper region whose outer wire is ellipses and hyperbolas — the signature of slicing a cone off-axis.</p>
+
+<p>FTC-07 had the same shape of problem for a different reason: its section is disjoint at every height, because <strong>the part is two parallel lobes</strong>. Two equal regions of 1013.4 mm² sitting side by side. "Disjoint at every height" was being treated as a failure when it is in fact a description: a part made of several parallel prisms. The fix is to emit one sketch and one pad per region, which is something the IR could already express and the recogniser simply never tried.</p>
+
+<h2>Why loosening a threshold was safe</h2>
+
+<p><strong>The axis threshold is a recall knob, not a correctness knob, and that distinction is structural rather than empirical.</strong> Verification sits downstream of axis selection and is independent of it: the recovered tree gets re-executed and compared to the input no matter which axis produced it. So loosening the gate can only move a part from REFUSED to PARTIAL or VERIFIED. It cannot manufacture a false accept, because the thing that decides acceptance never sees the threshold.</p>
+
+<p>That is the practical payoff of separating recognition from acceptance, and it is worth being concrete about what it buys: recall can be tuned freely without re-auditing soundness. We moved the gate from 40% to 75% and added the multi-region path.</p>
+
+<div class="table-wrap"><table>
+<thead>
+<tr><th></th><th>Before</th><th>After</th></tr>
+</thead>
+<tbody>
+<tr><td>VERIFIED</td><td>3</td><td>3</td></tr>
+<tr><td>PARTIAL</td><td>5</td><td>8</td></tr>
+<tr><td>REFUSED</td><td>3</td><td><strong>0</strong></td></tr>
+<tr><td>CTC-01 reconstruction IoU</td><td>99.841%</td><td>99.860%</td></tr>
+<tr><td>FTC-08 volume residual</td><td>52.55%</td><td>32.61%</td></tr>
+</tbody>
+</table></div>
+
+<p>No false accept appeared. All three VERIFIED parts were re-checked with rotation-aware intersection-over-union and still exceed 99.68%; CTC-01 improved slightly. FTC-08, which was already recovering, improved by twenty points because the wider gate let a better axis win. Refusal is still reachable — a torus is still refused — it simply is not exercised by this corpus.</p>
+
+<p><img loading="lazy" alt="Volume of the reconstructed NIST CTC-01 solid plotted against the number of features applied. It starts at a base envelope 155% above the target, steps down sharply around feature 30, and converges into a shaded tolerance band around the target volume by feature 45." src="carve-convergence.png" /></p>
+
+<p>The picture above is the argument in one plot, on the one part that recovers cleanly: a base envelope 155% too big, then 54 carving operations bringing it down into the tolerance band. The verifier accepts only inside the band.</p>
+
+<h2>Three harness bugs, each caught by producing an absurd number</h2>
+
+<p><strong>The measurement code was less trustworthy than the thing it was measuring.</strong> Extending the IoU harness to score failed recoveries — previously they had no IoU at all, which meant the parts we most wanted a number for were the ones with none — broke it three separate ways. Each break was found because the output was obviously impossible, which is the only reason they were found at all.</p>
+
+<ul>
+<li><strong>One bad boolean killed a whole part.</strong> OpenCASCADE threw <code>Null TopoDS_Shape</code> on one of 24 orientations and took the other 23 with it. Now each orientation fails independently.</li>
+<li><strong>A hard crash returned nothing.</strong> One orientation took the OCCT process down with a segfault, which no <code>try/except</code> catches. The worker now streams its best-so-far, so the parent falls back to the last checkpoint.</li>
+<li><strong>An impossible IoU of 50,133%.</strong> A degenerate union came back with a volume smaller than its own operands, which drove the inclusion–exclusion intersection wildly positive. A sound union contains both inputs, so <code>U ≥ max(A,B)</code> and IoU lands in [0,1]. Violations are now discarded as failed orientations rather than recorded as data.</li>
+</ul>
+
+<p>That last one is the uncomfortable one. It produced a number, the number went into a results table, and only its sheer magnitude flagged it. A degenerate boolean that returned a <em>plausible</em> wrong number would have shipped.</p>
+
+<h2>Two things we had to correct</h2>
+
+<p><strong>A headline number went stale, and nothing rendered visibly wrong.</strong> The published preprint reported that on CTC-01, over-cut and uncut material partially cancel in the volume check, understating the true geometric discrepancy by 1.56×. Re-running the decomposition after the recogniser change gives <strong>1.01×</strong> — the new recovery is almost purely over-cut, 20,397 mm³ against 62 mm³.</p>
+
+<p>The figure was in the abstract, the README and the figures README, and a front-end change that was not aimed at the error analysis moved it by half its own value. We kept both numbers in the paper, because the volatility is a better argument than either figure: nothing in a volume-based criterion bounds that error term, and it drifts freely under unrelated implementation choices. A criterion whose error term does that is not one to accept results on.</p>
+
+<p><strong>And a claim was retracted before it published.</strong> The new IoU numbers for failed recoveries were briefly written up as showing that one part — which agrees with its target to 2.43% on volume — overlaps it by "no more than 25%". That is backwards. The measurement searches 24 orientations under a fixed alignment and takes the best, which makes it a <em>lower</em> bound: it can certify that a recovery is largely right, and can never establish that one is poor. The interesting reading was the unavailable one.</p>
+
+<p>The argument was rebuilt on a fact that needs no bound: <strong>no orientation of that reconstruction matches the input's bounding-box extents to within 0.05 mm.</strong> So 97.6% volume agreement carries no implication of 97.6% shape agreement — which is the point, and it survives without the number that could not support it.</p>
+
+<h2>What this says about verified generation</h2>
+
+<p><strong>The interesting result is not the zero. It is that three refusals were a threshold wearing a principle's clothes.</strong> "The part is outside our feature vocabulary" and "our axis prefilter is tuned conservatively" produce the same output and read identically from the outside. Telling them apart required instrumenting the refusal path and asking, per part, which line actually raised.</p>
+
+<p>The architecture is what made the fix cheap and safe. Because acceptance is a separate stage that re-executes the recovered program and compares geometry, the front end can be made as aggressive as you like and the worst case is wasted compute. If recognition and acceptance had been one scoring function — which is the natural way to write it — then every threshold change would have been a soundness change, and this would have been a week of re-auditing instead of an afternoon.</p>
+
+<p>The remaining honest gap: eight of eleven parts are PARTIAL, and we can put a floor under how much of each was recovered but not a ceiling. Establishing how <em>wrong</em> a partial recovery is needs real registration rather than a 24-orientation search, and that is the single change that would most improve the evaluation.</p>
+
+<p>Code is at <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>, MIT. The paper, with the full NIST table and the prior-art scan behind its deliberate lack of a novelty claim, is at <a href="https://doi.org/10.5281/zenodo.22848792">10.5281/zenodo.22848792</a>. Every number here regenerates from the commands in <code>paper/figures/README.md</code>.</p>
+
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
