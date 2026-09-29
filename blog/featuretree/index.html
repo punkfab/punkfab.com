@@ -39,7 +39,7 @@
 <ul>
 <li><strong>Find candidate axes.</strong> Every face normal and cylinder axis is a candidate. Each one is scored by how many faces are inconsistent with a prism along it: angled walls, cross-holes, anything spherical or freeform.</li>
 <li><strong>Read the profile.</strong> Rotate the best axes onto Z and slice. The section's outline becomes a sketch and a pad; its inner loops become through-holes; concave cylinders that stop short become blind holes. Parts that are bodies of revolution take a meridian section and a revolve instead.</li>
-<li><strong>Recognise shells.</strong> Boxes, cups and enclosures aren't prisms along any axis. A stack of slices along each principal axis finds them: mostly rings, closed at one end. They are recovered as a drafted pad plus a drafted cavity pocket, with the draft angle fitted from how the rings grow with depth.</li>
+<li><strong>Recognise shells.</strong> Boxes, pans and enclosures aren't prisms along any axis. A stack of slices along each principal axis finds them: mostly rings, closed at one end. The outline is split into layers (flange, wall, lip), each a pad, drafted if its slices say so; the cavity is a drafted pocket and the floor's openings are cut straight from the floor slice.</li>
 <li><strong>Carve the rest.</strong> If the base extrude doesn't match, what's left over is carved away feature by feature. Each leftover lump is itself a profile along its own axis — a floor pocket, a through-web window, a cross-hole — and is recognised and cut in turn.</li>
 <li><strong>Rebuild and compare.</strong> The recovered tree is re-executed and compared with the input: volume within 0.5% and extents within 0.05 mm is VERIFIED; anything else is PARTIAL, with the residual reported. Several axes can look plausible, so featuretree builds a candidate per axis and the rebuild picks the winner. No heuristic score ever decides.</li>
 </ul>
@@ -65,8 +65,8 @@
 <tr><td style="white-space:nowrap">CTC-04</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">2.43%</td><td>390.0</td><td style="white-space:nowrap">30.8 ± 0.5</td><td>270</td><td>extrude Z</td></tr>
 <tr><td style="white-space:nowrap">CTC-05</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">51.80%</td><td>349.2</td><td style="white-space:nowrap">14.5 ± 0.8</td><td>106</td><td>extrude Z</td></tr>
 <tr><td style="white-space:nowrap">FTC-06</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">31.85%</td><td>98.8</td><td style="white-space:nowrap">59.6 ± 0.6</td><td>44</td><td>extrude Y · 17 pockets, 5 holes</td></tr>
-<tr><td style="white-space:nowrap">FTC-07</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">1.80%</td><td>6.4</td><td style="white-space:nowrap">94.9 ± 0.4</td><td>21</td><td>drafted shell ∥Y (1.0°) · 9 pockets, 8 holes</td></tr>
-<tr><td style="white-space:nowrap">FTC-08</td><td>PARTIAL</td><td>volume</td><td style="white-space:nowrap">32.61%</td><td>0.0</td><td style="white-space:nowrap">52.7 ± 1.0</td><td>24</td><td>extrude X · 2 regions</td></tr>
+<tr><td style="white-space:nowrap">FTC-07</td><td>PARTIAL</td><td>extents</td><td style="white-space:nowrap">0.09%</td><td>1.5</td><td style="white-space:nowrap">95.5 ± 0.4</td><td>25</td><td>drafted shell ∥Y (1.0°) · 3 outline layers · 9 pockets, 8 holes</td></tr>
+<tr><td style="white-space:nowrap">FTC-08</td><td>PARTIAL</td><td>volume</td><td style="white-space:nowrap">3.56%</td><td>0.0</td><td style="white-space:nowrap">95.9 ± 0.4</td><td>48</td><td>shell ∥Z · 2 outline layers · 21 floor cutouts</td></tr>
 <tr><td style="white-space:nowrap">FTC-09</td><td><strong>VERIFIED</strong></td><td>—</td><td style="white-space:nowrap">0.19%</td><td>0.0</td><td style="white-space:nowrap"><strong>99.70 ± 0.05</strong></td><td>80</td><td>extrude Y</td></tr>
 <tr><td style="white-space:nowrap">FTC-10</td><td>PARTIAL</td><td>both</td><td style="white-space:nowrap">20.80%</td><td>18.0</td><td style="white-space:nowrap">76.0 ± 0.5</td><td>24</td><td>extrude Z</td></tr>
 <tr><td style="white-space:nowrap">FTC-11</td><td><strong>VERIFIED</strong></td><td>—</td><td style="white-space:nowrap">0.00%</td><td>0.0</td><td style="white-space:nowrap"><strong>100.00 ± 0.00</strong></td><td>2</td><td>revolve</td></tr>
@@ -76,13 +76,13 @@
 <li><strong>11 of 11 parts yield an editable feature tree.</strong> None is refused.</li>
 <li><strong>3 of 11 are VERIFIED</strong> (one Combined, two Fully-Toleranced), each above 99.6% IoU with the input. FTC-11 is a two-feature revolve and should carry little weight.</li>
 <li><strong>No incorrect tree was accepted.</strong> That is the property that makes the output safe to edit, and it holds on a measurement that uses no Boolean operations.</li>
-<li><strong>The other 8 are PARTIAL:</strong> an editable tree for part of the geometry, labelled as such, ranging from 7% of the part (CTC-02) to 95% (FTC-07).</li>
-<li><strong>Seven of the eight PARTIAL parts fail both tests.</strong> FTC-08 is the exception: its extents match exactly and it is 33% short on volume. CTC-04 is the reverse trap. It is within 2.43% on volume, but its extents are off by 390 mm and it overlaps its input by only 31%. Every PARTIAL recovery has <em>less</em> volume than its input: when featuretree falls short it leaves material out, it does not invent it.</li>
+<li><strong>The other 8 are PARTIAL:</strong> an editable tree for part of the geometry, labelled as such, ranging from 7% of the part (CTC-02) to 96% (FTC-08).</li>
+<li><strong>Six of the eight PARTIAL parts fail both tests.</strong> FTC-07 now fails only on extents (its rim flares 1.5 mm wider than the recovered lip) and FTC-08 only on volume (3.6% short). CTC-04 is the reverse trap. It is within 2.43% on volume, but its extents are off by 390 mm and it overlaps its input by only 31%. Every PARTIAL recovery has <em>less</em> volume than its input: when featuretree falls short it leaves material out, it does not invent it.</li>
 </ul>
 
 <p><img loading="lazy" alt="All eleven NIST parts, original STEP in grey beside the recovered tree in teal, each pair in the same registration. The three VERIFIED pairs, CTC-01, FTC-09 (a thin perforated plate) and FTC-11 (a ring), are visually identical. The eight PARTIAL recoveries range from most of the part (FTC-06 about 39%, FTC-10 about 46%, FTC-08 about 53% as two long rails) down to very little: CTC-02 and FTC-07 come back as two flat plates, CTC-03 as a single plate, CTC-05 (a flanged base with a post) as one small block, and CTC-04, close on volume, as a compact box unlike its long thin original." src="recovered-all.png" /></p>
 
-<p>All eleven, each recovery placed exactly where its IoU was measured. The picture makes the verdicts legible in a way the numbers don't. VERIFIED means indistinguishable. PARTIAL ranges from "nearly all of it" (FTC-07, a drafted box) to "a plate". CTC-04 shows why volume alone is not a test: it is within 2.43% on volume, and it is plainly the wrong shape.</p>
+<p>All eleven, each recovery placed exactly where its IoU was measured. The picture makes the verdicts legible in a way the numbers don't. VERIFIED means indistinguishable. PARTIAL ranges from "nearly all of it" (FTC-07, a drafted box, and FTC-08, a pan) to "a plate". CTC-04 shows why volume alone is not a test: it is within 2.43% on volume, and it is plainly the wrong shape.</p>
 
 <div class="table-wrap"><table>
 <thead><tr><th>Published by NIST, not run</th><th>NIST set</th><th>Why</th></tr></thead><tbody>
@@ -110,7 +110,7 @@
 
 <div class="table-wrap"><table>
 <thead>
-<tr><th></th><th>First full run</th><th>Now</th></tr>
+<tr><th></th><th>First full run</th><th>After the threshold change</th></tr>
 </thead>
 <tbody>
 <tr><td>VERIFIED</td><td>3</td><td>3</td></tr>
@@ -128,9 +128,11 @@
 
 <p><strong>No single cross-section of FTC-07 says "box". Looked at from several aspects, it can't be anything else.</strong> Across its opening, every slice is two walls. Along it, the slices are the rectangular ring an open box should give: 18 of 24 are one region with a large inner loop, solid at the floor and open at the rim. So featuretree now cuts a stack of slices along each principal axis, and an axis whose slices are mostly rings, closed at one end, is an <em>open shell</em>.</p>
 
-<p>The slices also explained why the part was never a prism. It's a <em>molded</em> box, and the rings grow steadily with depth: the outer wall 1.4 mm per side over 81 mm, the cavity the same. That's <strong>1.0° of draft</strong> on every wall, inside and out, the taper that lets a part release from its mould. featuretree didn't have draft at all, so pads and pockets now take a taper angle. FreeCAD and build123d both build it natively, and a test pins FreeCAD's sign convention against build123d's, checked by flipping it and watching the test fail. FTC-07 is then recovered as a designer would draw it: <strong>a drafted pad and a drafted cavity pocket</strong>, two operations at 87% IoU. Carving the slots and bosses takes it to 95%, from two walls at 30%.</p>
+<p>The slices also explained why the part was never a prism. It's a <em>molded</em> box, and the rings grow steadily with depth: the outer wall 1.4 mm per side over 81 mm, the cavity the same. That's <strong>1.0° of draft</strong> on every wall, inside and out, the taper that lets a part release from its mould. featuretree didn't have draft at all, so pads and pockets now take a taper angle. FreeCAD and build123d both build it natively, and a test pins FreeCAD's sign convention against build123d's, checked by flipping it and watching the test fail. FTC-07 is then recovered as a designer would draw it: <strong>a drafted pad and a drafted cavity pocket</strong>, two operations at 87% IoU. Carving the slots and bosses takes it to 95.5%, from two walls at 30%.</p>
 
-<p>It stays PARTIAL, correctly: the rim lip and some details aren't recovered, and it's 1.8% short on volume. Getting it right also exposed a latent bug in the carving step. It lined the part up against its rebuilt base by matching bounding-box corners, which is only right when the base spans the part's full extent. FTC-07's rim lip overhangs its walls by 3.18 mm, so every carved feature had landed 3.18 mm off. Fixing it moved FTC-07 from 92% to 95%; no other part's result changed.</p>
+<p>The outline isn't one thing either: a straight band at the floor, the drafted wall, then a rim lip. So the outline's size against depth is split into <em>layers</em> wherever it stops following a straight line, and each layer becomes a pad stacked on the one below. That brought FTC-07's volume error to 0.09%, inside the gate. It stays PARTIAL, correctly, on extents alone: the rim flares to 311.6 mm at its very edge, 1.5 mm wider than the lip layer. Getting it right also exposed a latent bug in the carving step. It lined the part up against its rebuilt base by matching bounding-box corners, which is only right when the base spans the part's full extent. FTC-07's rim lip overhangs its walls by 3.18 mm, so every carved feature had landed 3.18 mm off. Fixing it moved FTC-07 from 92% to 95%; no other part's result changed.</p>
+
+<p><strong>FTC-08 is the same problem the other way up.</strong> It came back as two L-brackets, 53% IoU, but it's a shallow pan that opens downward: a 10 mm flange at the open end, straight walls, and a 3.4 mm floor with 21 cutouts. The shell detector had found it along its depth, but one straight-line fit across the flange step read as an 8° "draft", and the result lost to the L-brackets. With layers it's a flange pad, a wall pad and a cavity pocket, and the floor slice hands over its 21 cutouts directly as inner loops: <strong>3.6% short on volume, 96% IoU</strong>. Carving then over-cut it badly, which the rebuild check rejected in favour of the uncarved pan. A guard on individual carve steps is still owed; FTC-10 needs it too.</p>
 
 <h2>Measuring it honestly</h2>
 
