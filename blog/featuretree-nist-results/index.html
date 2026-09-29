@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>featuretree on the NIST test parts: results — PUNKFAB log</title>
+<meta name="description" content="Results for featuretree, our open feature-recovery harness, on every distinct NIST MBE PMI test geometry: an editable tree for 11 of 11 parts, 3 verified, 0 wrongly accepted, and average overlap with the input up from 65% to 97.6%. Timing, complexity, accuracy, design intent against the designer's PMI, and the defects our own checks caught on the way." />
+<meta property="og:title" content="featuretree on the NIST test parts: results" />
+<meta property="og:description" content="An editable tree for 11 of 11 NIST test parts, 3 verified, 0 wrongly accepted, and average overlap with the input up from 65% to 97.6% — plus the false accepts our checks caught in our own recogniser." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/featuretree-nist-results/recovered-all.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">results · featuretree</p>
+  <h1>featuretree on the NIST test parts: results</h1>
+  <p class="meta">2026-09-29 · Dan Newcome · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · preprint <a href="https://doi.org/10.5281/zenodo.22848792">10.5281/zenodo.22848792</a></p>
+  <article class="post">
+
+<p><strong><a href="/blog/featuretree/">featuretree</a> turns a STEP solid into an editable feature tree for FreeCAD, Onshape or build123d, and checks every recovery by rebuilding it.</strong> A tree that rebuilds the part is VERIFIED. One that doesn't is labelled PARTIAL, with the error reported. This post is the scorecard: every distinct part geometry in NIST's MBE PMI test set, with time, complexity, accuracy, and how well the recovered tree matches what the designer actually drew.</p>
+
+<p><strong>The short version: every part now comes back as an editable tree that overlaps the original by at least 93.5%, averaging 97.6%, up from 65%. None was wrongly accepted.</strong> The VERIFIED count didn't move: it's still 3 of 11, because the bar also got higher. Our own checks caught our new recogniser accepting two parts it shouldn't have, and we made the bar stricter rather than keep the better-looking number.</p>
+
+<p><img loading="lazy" src="recovered-all.jpg" alt="All eleven NIST test parts, each original in grey beside its recovered feature tree rebuilt in teal, labelled with verdict and overlap. Three are VERIFIED at 99.67 to 100 percent; eight are PARTIAL between 93.5 and 99.0 percent. The recovered CTC-02 housing shows visible stair-stepping on its drafted walls."></p>
+
+<h2>Scorecard</h2>
+<p><strong>NIST doesn't define a score for feature recognition.</strong> These test cases exist to check how CAD translators carry tolerances and annotations (PMI). So the criteria below are ours, stated so anyone can re-compute them from the repo:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Criterion</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Coverage: distinct NIST test geometries run (CTC-01 to 05, FTC-06 to 11)</td><td><strong>11 / 11</strong></td></tr>
+<tr><td>Editable tree returned (none refused, none crashed)</td><td><strong>11 / 11</strong></td></tr>
+<tr><td>VERIFIED: volume within 0.5%, size within 0.05 mm, <em>and</em> overlap (IoU) at least 99.5%</td><td><strong>3 / 11</strong></td></tr>
+<tr><td>False accepts: VERIFIED but independently measured below 99.5% overlap</td><td><strong>0</strong></td></tr>
+<tr><td>Overlap with the input, all parts (mean / worst)</td><td><strong>97.6% / 93.5%</strong> (was 65.0% / 7.4%)</td></tr>
+<tr><td>Parts above 95% / above 99% overlap</td><td>10 / 11 · 4 / 11</td></tr>
+<tr><td>Recognition time (median / slowest / whole set)</td><td>152 s / 562 s / 29 min</td></tr>
+<tr><td>Complexity: B-rep faces in → feature operations out</td><td>2,727 → 431</td></tr>
+<tr><td>Dimensioned holes found, vs the designer's PMI</td><td>97 / 196</td></tr>
+<tr><td>Standard sizes named correctly (of holes found)</td><td>68 / 74</td></tr>
+<tr><td>Unit system (inch vs metric) inferred correctly</td><td>9 / 11</td></tr>
+</tbody></table></div>
+
+<p><em>Overlap</em> here is intersection over union (IoU) between the original solid and the rebuilt tree. We measure it without CAD Boolean operations, by classifying thousands of sample points against both solids, with the recogniser's own transform undone so the comparison is exact. Booleans turned out to be unreliable on exactly the parts that fail. That story is in the <a href="/blog/featuretree/">first post</a>.</p>
+
+<h2>Every part</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Part</th><th>Faces in</th><th>Ops out</th><th>Time</th><th>Overlap before</th><th>Overlap now</th><th>Verdict</th><th>Holes vs PMI</th></tr></thead>
+<tbody>
+<tr><td style="white-space:nowrap">CTC-01</td><td>139</td><td>39</td><td style="white-space:nowrap">86 s</td><td>99.8%</td><td><strong>99.8%</strong></td><td><strong>VERIFIED</strong></td><td>7/7</td></tr>
+<tr><td style="white-space:nowrap">CTC-02</td><td>663</td><td>89</td><td style="white-space:nowrap">562 s</td><td>7.4%</td><td>93.5%</td><td>partial</td><td>2/7</td></tr>
+<tr><td style="white-space:nowrap">CTC-03</td><td>139</td><td>33</td><td style="white-space:nowrap">72 s</td><td>36.1%</td><td>95.2%</td><td>partial</td><td>0/11</td></tr>
+<tr><td style="white-space:nowrap">CTC-04</td><td>517</td><td>93</td><td style="white-space:nowrap">194 s</td><td>30.8%</td><td>99.0%</td><td>partial</td><td>36/41</td></tr>
+<tr><td style="white-space:nowrap">CTC-05</td><td>208</td><td>40</td><td style="white-space:nowrap">58 s</td><td>14.5%</td><td>97.2%</td><td>partial</td><td>1/1</td></tr>
+<tr><td style="white-space:nowrap">FTC-06</td><td>144</td><td>18</td><td style="white-space:nowrap">166 s</td><td>59.6%</td><td>98.2%</td><td>partial</td><td>0/22</td></tr>
+<tr><td style="white-space:nowrap">FTC-07</td><td>269</td><td>21</td><td style="white-space:nowrap">194 s</td><td>95.5%</td><td>95.4%</td><td>partial</td><td>4/27</td></tr>
+<tr><td style="white-space:nowrap">FTC-08</td><td>270</td><td>32</td><td style="white-space:nowrap">152 s</td><td>95.9%</td><td>98.7%</td><td>partial</td><td>16/16</td></tr>
+<tr><td style="white-space:nowrap">FTC-09</td><td>158</td><td>40</td><td style="white-space:nowrap">18 s</td><td>99.7%</td><td><strong>99.7%</strong></td><td><strong>VERIFIED</strong></td><td>29/30</td></tr>
+<tr><td style="white-space:nowrap">FTC-10</td><td>214</td><td>25</td><td style="white-space:nowrap">241 s</td><td>76.0%</td><td>97.3%</td><td>partial</td><td>0/32</td></tr>
+<tr><td style="white-space:nowrap">FTC-11</td><td>6</td><td>1</td><td style="white-space:nowrap">19 s</td><td>100%</td><td><strong>100%</strong></td><td><strong>VERIFIED</strong></td><td>2/2</td></tr>
+</tbody></table></div>
+<p>"Before" is the published <a href="/blog/featuretree/">first post</a>. "Ops out" counts the pads, pockets, cuts and revolves in the recovered tree (sketches not counted). Time is recognition only, one part at a time. FTC-11 is a two-feature ring and shouldn't carry much weight.</p>
+
+<h2>01 / Slice it, don't guess it</h2>
+<p><strong>The first version assumed a part is one profile swept along one axis, then carved.</strong> That works on machined plates like CTC-01 and FTC-09. It fails on anything built up in levels: a pan with a flange, a housing with bosses at several heights, a bracket bent from sheet. Those came back as fragments, at 7% to 60% overlap.</p>
+<p><strong>The new path treats a part as a stack of 2.5D layers.</strong> Along each principal axis it takes exact cross-sections. It starts at every flat face perpendicular to the axis, where a step or floor can begin, then splits further wherever the section's shape changes between samples, since a boss merging into a wall often ends on a curve with no flat face to mark it. Layers that look the same merge. Each layer becomes one sketch and one pad, drafted if its slices taper, and holes are linked through the layers and cut once. That's the whole change behind the "overlap now" column: CTC-05 went from 14.5% to 97.2%, and CTC-04 from 30.8% to 99.0%.</p>
+
+<h2>02 / Our checks caught our own recogniser</h2>
+<p><strong>The first run with layered recognition looked great: 7 of 11 VERIFIED.</strong> It was wrong. At the time, VERIFIED meant the rebuilt tree matched the original on volume and on size. More candidates per part means more chances for errors to cancel: material missing in one place and extra in another can add up to the right volume. Measured independently, two of those seven overlapped their originals by only 95.0% (CTC-03) and 93.7% (FTC-07). Two more fell just short.</p>
+<p><strong>We'd predicted this failure in our own preprint</strong> and recommended an overlap test as the fix, but hadn't shipped it. Now VERIFIED also needs 99.5% overlap, measured without Booleans on every candidate. The count went back to 3, with no false accepts. We'd rather publish 3 we can defend than 7 we can't.</p>
+
+<h2>03 / Defects our checks found</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Defect</th><th>Found by</th><th>Effect before the fix</th></tr></thead>
+<tbody>
+<tr><td>Volume and size can agree while the shape is wrong</td><td>independent overlap measurement</td><td>2 parts wrongly VERIFIED (95.0%, 93.7%)</td></tr>
+<tr><td>A layer whose section wouldn't close was silently dropped, and everything above it sank</td><td>size check</td><td>CTC-02 17.27 mm short, no warning</td></tr>
+<tr><td>When nothing verified, the closest-volume candidate was returned, not the best-overlapping one</td><td>overlap measurement</td><td>FTC-08 at 93.5% instead of 98.7%</td></tr>
+<tr><td>Separate regions in one layer were stacked on top of each other</td><td>rebuild + render review</td><td>FTC-07's floor 2.5 mm up and out of the part</td></tr>
+<tr><td>Hole cuts placed in the rotated working frame</td><td>rebuild + render review</td><td>holes 115 mm outside FTC-07</td></tr>
+<tr><td>Hole outline taken from the smallest slice, which was a fillet</td><td>volume check</td><td>FTC-08 under-cut 1.15 mm per side</td></tr>
+<tr><td>Geometry kernel crash during recognition took the whole part with it</td><td>corpus run</td><td>CTC-02 "no output"</td></tr>
+<tr><td>Wire length re-measured on every point sample</td><td>profiler</td><td>180 s of a 183 s run</td></tr>
+<tr><td colspan="3"><strong>Wrong trees published: 0</strong></td></tr>
+</tbody></table></div>
+<p>Each of these is now a test or a standing check in the harness, so the next recogniser change has to pass them.</p>
+
+<h2>04 / Design intent, scored against the designer</h2>
+<p><strong>A tree that rebuilds the part still reads like a machine wrote it.</strong> Holes are arcs inside generic cuts, and every size is a bare float. featuretree re-expresses it the way a designer would: holes, bolt circles and rows, the unit system, and the standard drill each diameter most likely is. NIST's AP242 files carry the designer's own dimensions, tolerances and datums, so this can be scored, not just demonstrated.</p>
+<p><strong>On the three VERIFIED parts it finds 38 of 39 dimensioned holes and names all 36 sizes the way the drawing does.</strong> A 3.969 mm hole comes back as a 5/32" drill where the drawing says .156. Across all eleven parts it finds 97 of 196 holes, and PARTIAL trees can still carry intent: all 16 of FTC-08's holes and 36 of CTC-04's 41. It misses every hole on FTC-06, FTC-10 and CTC-03, where the holes are threaded, chamfered or split across layers and don't slice as clean circles. It gets the unit system wrong on two metric parts whose overall dimensions happen to land on an inch grid.</p>
+
+<h2>What's still hard: CTC-02</h2>
+<p><strong>CTC-02 is a cast housing, and the tool was built around machined parts.</strong> It has 663 faces, against 139 for CTC-01, including 158 cones (drafted walls and bosses, so it releases from a mould) and 58 freeform or spherical blends. A stack of layers along one axis approximates it rather than representing it. The drafts become a staircase (visible in the render), the side bosses become layer outlines instead of features on their own axis, and 1,369 section curves are approximated by arcs. It reaches 93.5% overlap and takes over 9 minutes. Next up:</p>
+<ul>
+<li>recognise side features on their own axis</li>
+<li>fit draft wall by wall</li>
+<li>recover blends as fillets instead of slicing through them</li>
+</ul>
+
+<h2>Who did what</h2>
+<p><strong>A person set the goal and the bar; an agent did the engineering.</strong> We asked for the whole NIST set, for boxes to come back as boxes, for a general solution rather than per-part special cases, and for honest numbers. Claude, working through our research-paper skill and the featuretree harness, did the rest:</p>
+<ul>
+<li>wrote the layered recogniser</li>
+<li>found and fixed the defects above</li>
+<li>added the overlap gate that removed its own false accepts</li>
+<li>ran the evaluation, scored intent against NIST's PMI</li>
+<li>updated the <a href="https://doi.org/10.5281/zenodo.22848792">preprint</a></li>
+</ul>
+<p>The scorecard is generated by <code>paper/figures/results_report.py</code> from the persisted recovered trees, so every number here can be re-derived from the repo at commit <code>270e60d</code>.</p>
+<p>Everything is open in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>. Got a STEP file that should be an editable model? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

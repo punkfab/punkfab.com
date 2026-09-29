@@ -25,6 +25,7 @@
   <h1>featuretree: heuristic feature recovery for B-rep geometry</h1>
   <p class="meta">2026-09-28 · Dan Newcome · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · preprint <a href="https://doi.org/10.5281/zenodo.22848792">10.5281/zenodo.22848792</a></p>
   <article class="post">
+<p><em>Update 2026-09-29: layered recognition and a stricter gate lifted average overlap from 65% to 97.6% on the same eleven parts. See <a href="/blog/featuretree-nist-results/">the results post</a>. The numbers below are as first published.</em></p>
 
 <p><strong>A STEP file imports into a parametric CAD system as one frozen lump.</strong> The design history is gone. There is no pad depth to change and no hole diameter to edit, only a boundary representation: faces, edges and surfaces. <a href="https://github.com/punkfab/featuretree">featuretree</a> is a heuristic feature-recovery harness for that B-rep geometry. It proposes a feature tree of sketches, pads, pockets, revolves and cuts, then checks the proposal by rebuilding it and comparing the result against the input. A tree that passes can be emitted as a native, editable model in FreeCAD, Onshape or build123d.</p>
 
