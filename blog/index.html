@@ -25,6 +25,11 @@
   <ul class="postlist">
     <li>
       <span class="date">2026-09-29</span>
+      <a class="title" href="/blog/vtap-from-paper/">From a paper to a 13-DoF hand in a day: rebuilding the VTAP gripper</a>
+      <p>An IROS 2026 three-finger reconfigurable gripper with an active palm, rebuilt on Feetech servos in one session. The first pass gave the structure and all eleven parts; the verify stage caught nine defects with no print; the simulation found the palm has to lift small objects into the fingers' reach, then held every grasp and read grip force from servo current until the tips slipped.</p>
+    </li>
+    <li>
+      <span class="date">2026-09-29</span>
       <a class="title" href="/blog/honest-actuators/">The servo in the sim is too good</a>
       <p>Every SO-101 sim we ran treated the arm's servos as near-perfect, about 100× stiffer than the real firmware loop. Swapping in Rhoban's BAM actuator model, the recipe Pollen used for Microduck, moves predicted sag at full reach from 0.3 mm to 16.5 mm. It also turns "arrives within X mm" into a band, and adds a record, replay and fit loop to correct the model from a real arm.</p>
     </li>
