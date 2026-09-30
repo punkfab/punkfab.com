@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>One feature tree, several CAD systems — PUNKFAB log</title>
+<meta name="description" content="We published the featuretree IR: a small JSON format for CAD feature trees that FreeCAD, build123d and Onshape rebuild natively, checked the same way in each. What the measurements show, and what running the backends against each other found." />
+<meta property="og:title" content="One feature tree, several CAD systems" />
+<meta property="og:description" content="The featuretree IR spec, emitted natively into FreeCAD, build123d and Onshape and checked by re-reading. FreeCAD matches the reference on 10 of 11 NIST parts; cross-backend runs found six defects, one in the reference." />
+<meta property="og:type" content="article" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">paper · featuretree</p>
+  <h1>One feature tree, several CAD systems</h1>
+  <p class="meta">2026-09-29 · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · paper <a href="https://doi.org/10.5281/zenodo.23049388">10.5281/zenodo.23049388</a></p>
+  <article class="post">
+
+<p>A STEP file carries a part's shape but not how it was built. A native CAD file carries the history, but only its own vendor can read it. <a href="/blog/featuretree/">featuretree</a> keeps a small format in between. We've now written that format up as a specification, with measurements of how well each CAD system rebuilds it.</p>
+
+<p>The paper is <a href="https://doi.org/10.5281/zenodo.23049388">on Zenodo</a>. This post is the short version.</p>
+
+<h2>The format</h2>
+<p>A part is a JSON list of named features: sketches (with arcs), pad, pocket, fillet, revolve and placed cuts, with draft. Features refer to faces and edges by <em>query</em>, such as "the top face" or "the largest circle on top". They never use a CAD kernel's internal ids, so each system re-finds the geometry every time it rebuilds. A validator, <code>ir.validate()</code>, checks the rules every backend is allowed to assume.</p>
+
+<pre><code>{"kind": "sketch", "name": "recess_sk", "on": {"face_of": "body", "side": "top"}, "circles": [[0, 0, 6]]},
+{"kind": "pocket", "name": "recess", "sketch": "recess_sk", "through": false, "length": 4}</code></pre>
+
+<h2>Where it goes</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>System</th><th>How</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>build123d</td><td>Python, in-process</td><td>the reference</td></tr>
+<tr><td>FreeCAD</td><td>native PartDesign tree, headless</td><td>measured</td></tr>
+<tr><td>Onshape</td><td>native Part Studio over REST, every reference a FeatureScript query</td><td>measured</td></tr>
+<tr><td>Fusion, SolidWorks</td><td>generated scripts that run inside the program</td><td>written, not yet run</td></tr>
+</tbody></table></div>
+
+<p>Every system is checked the same way. The part is exported to STEP and compared with the reference build, by volume and by overlap (IoU). Each backend also records the volume after every feature, so when two backends disagree we can see which feature caused it.</p>
+
+<h2>Results</h2>
+<p><strong>FreeCAD matches the reference on 10 of the 11 NIST test parts.</strong> The eleventh breaks one of the specification's rules, described below. <strong>Onshape matched every feature of our coverage parts to three decimals</strong>, apart from one pocket that removed 4.175 mm³ too much. We haven't explained that yet.</p>
+
+<p>Onshape's run on the NIST parts stopped after two, when the free plan's daily API quota ran out. One of the two passed; the other built 53 of 54 features. We'll add the other nine in a revision.</p>
+
+<h2>What running them against each other found</h2>
+<p>No single backend reported any of these problems. Comparing backends found six:</p>
+<ul>
+<li><strong>The reference itself was wrong.</strong> A pad from a bottom face at z = 0 grew upward into the part. It's fixed, and none of our published results change.</li>
+<li><strong>FreeCAD kept one solid.</strong> A sketch with several separate outlines padded only one of them, halving the part.</li>
+<li><strong>Two rules the spec had never stated.</strong> Loops in one sketch must not touch. An arc with a near-zero bulge is a straight line.</li>
+<li><strong>Onshape's draft direction was opposite to our first guess.</strong> Its failure behaviour also differs: a cut that removes nothing is an error there and silently does nothing elsewhere.</li>
+</ul>
+
+<h2>Reading native files back</h2>
+<p>NIST publishes the same test parts as native SolidWorks files. We decoded each one to STEP with Onshape's importer and with an open-source decoder, and compared both with NIST's own STEP. Onshape matched on all 11. The open decoder matched on 1, and four of its wrong parts passed its own checks. <strong>One decoder is not enough.</strong> We now take geometry from the commercial importer and the feature history from the open one, and we've <a href="https://github.com/cadmpeg/cadmpeg/issues/170">reported the failures upstream</a>.</p>
+
+<h2>What's not new</h2>
+<p>Neutral feature exchange between CAD systems goes back to the macro-parametric work of the early 2000s, and a closely related system, CADIR, appeared in August. We don't claim to be first. What we're adding is an open spec, an MIT implementation, Onshape as a target, and measurements anyone can rerun.</p>
+
+<h2>Who did what</h2>
+<p>We steered the design with Claude over many rounds, pushing on correctness, generality and performance. Claude wrote and debugged the code and ran the measurements.</p>
+
+<p>Everything is in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>. Every table in the paper is regenerated from the repo at commit <code>865dde3</code>. Got a design that should open as an editable tree somewhere else? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
