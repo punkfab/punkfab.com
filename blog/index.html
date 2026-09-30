@@ -25,6 +25,11 @@
   <ul class="postlist">
     <li>
       <span class="date">2026-09-29</span>
+      <a class="title" href="/blog/honest-actuators/">The servo in the sim is too good</a>
+      <p>Every SO-101 sim we ran treated the arm's servos as near-perfect, about 100× stiffer than the real firmware loop. Swapping in Rhoban's BAM actuator model, the recipe Pollen used for Microduck, moves predicted sag at full reach from 0.3 mm to 16.5 mm. It also turns "arrives within X mm" into a band, and adds a record, replay and fit loop to correct the model from a real arm.</p>
+    </li>
+    <li>
+      <span class="date">2026-09-29</span>
       <a class="title" href="/blog/featuretree-ir/">One feature tree, several CAD systems</a>
       <p>We published the featuretree IR: a small JSON format for CAD feature trees that FreeCAD, build123d and Onshape rebuild natively, each checked the same way. FreeCAD matches the reference on 10 of 11 NIST parts; running the backends against each other found six defects, one of them in the reference, and reading NIST's native SolidWorks files back showed why one decoder is not enough.</p>
     </li>

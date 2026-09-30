@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The servo in the sim is too good — PUNKFAB log</title>
+<meta name="description" content="Every SO-101 simulation we run treated the arm's servos as near-perfect: about 100× stiffer than the real firmware loop. Swapping in Rhoban's BAM actuator model, the approach Pollen used for Microduck, moves predicted sag at full reach from 0.3 mm to 16.5 mm, and turns 'arrives within X mm' into a band instead of a point." />
+<meta property="og:title" content="The servo in the sim is too good" />
+<meta property="og:description" content="Every SO-101 simulation we run treated the arm's servos as near-perfect: about 100× stiffer than the real firmware loop. Swapping in Rhoban's BAM actuator model moves predicted sag at full reach from 0.3 mm to 16.5 mm." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/honest-actuators/compare.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">case study · real2sim</p>
+  <h1>The servo in the sim is too good</h1>
+  <p class="meta">2026-09-29 · Dan Newcome</p>
+  <article class="post">
+<p><strong>A simulation is only as honest as its actuators.</strong> Our workcell sims, our arm-mounted grippers and our configuration search all use the same SO-101 arm model: the upstream MuJoCo file most SO-101 projects start from. It drives each Feetech STS3215 servo as an ideal position controller with a stiffness of 998 N·m/rad. The real servo is a firmware P loop. It rate-limits the target, sets a motor duty cycle in proportion to the error, and works through a 1:345 plastic gearbox whose friction depends on the load. At the gain lerobot sets for the SO-101, that loop's stiffness is about <strong>10 N·m/rad, roughly 100× softer</strong>.</p>
+<p><strong>That changes what the sim predicts.</strong> With the arm at full reach, the stock model says the gripper sags 0.3 mm. A model of the real servo says 16.5 mm, and 56 mm with 200 g in the gripper. In a pipeline where every check re-runs on every change, the actuator model decides which of those checks mean anything. So this round of work went into the actuators.</p>
+
+<h2>The recipe we borrowed</h2>
+<p><strong>Two groups have already done the hard part.</strong> Rhoban's <a href="https://github.com/Rhoban/bam">BAM</a> (Better Actuator Models, ICRA 2025, <a href="https://arxiv.org/abs/2410.08650">arXiv 2410.08650</a>) models a servo down to its firmware control law. Its friction grows with load, differs between driving and being backdriven, and is higher at rest. They identified it from pendulum recordings and published fits for common servos, including the STS3215. Pollen Robotics then used BAM for <a href="https://github.com/pollen-robotics/microduck_rl">Microduck</a>, their 800 g walking robot, noting that at that scale "actuator fidelity is most of the sim2real gap". Their recipe:</p>
+<ul>
+<li>model the actuator's control law, not an ideal servo</li>
+<li>randomize what can't be pinned down (friction, supply voltage, delay)</li>
+<li>put backlash in series with each servo, with the encoder reading through it</li>
+<li>compare sim and real on a single-servo testbench</li>
+</ul>
+<p>We applied it across PUNKFAB's simulations.</p>
+
+<h2>01 / Our own gearboxes: friction that depends on load</h2>
+<p><strong>For drives we design ourselves, there's no fitted model yet, only a prediction.</strong> Our sims modelled gearbox loss as a scaled-down motor torque plus a constant drag. That gets driving right but gets holding wrong: it makes the motor pay extra just to hold a load, when in a real gearbox friction helps hold it. We rebuilt the friction as BAM's models, generated from our own predicted efficiency before anything is printed. The implementation matches BAM's own code to 1e-15, and the simulation lands within 0.5% of the model's predicted thresholds for every model we tested.</p>
+<ul>
+<li><strong>Holding current dropped 1.8×.</strong> Our 40:1 test actuator needs 199 mA to hold its test load, not the 361 mA the old model claimed.</li>
+<li><strong>A rule of thumb didn't survive the data.</strong> The common estimate that backdriving is always less efficient than driving held for only 2 of the 8 servos BAM has fitted. Their ratio ranges from 0.94 to 1.17, so our prior now treats the two as equal until a bench measures them.</li>
+<li><strong>The simulator itself was hiding the effect.</strong> MuJoCo's friction is a soft constraint, so with default settings a held joint creeps at about 0.5°/s even inside its friction limit. That erased every holding result: all the friction models looked identical until we stiffened it. Stiffening it cuts the creep 100×.</li>
+</ul>
+<p><img loading="lazy" src="drive-backdrive.jpg" alt="Drive/backdrive diagrams for Coulomb friction, our efficiency-derived prior, and BAM's fitted STS3215: simulated thresholds on top of the model's predicted ones"></p>
+
+<h2>02 / The SO-101: the servo we actually use</h2>
+<p><strong>The STS3215 already has a fitted model, so we used it directly.</strong> We converted the arm's servos to BAM's STS3215 model at lerobot's firmware gain, and compared it with the stock model on the same arm:</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>stock model</th><th>BAM M6</th></tr></thead>
+<tbody>
+<tr><td>Gripper sag, full reach, empty</td><td>0.3 mm</td><td><strong>16.5 mm</strong></td></tr>
+<tr><td>Gripper sag, full reach, 200 g</td><td>0.7 mm</td><td><strong>55.6 mm</strong></td></tr>
+<tr><td>Same with friction ±30% and supply 6.8–8.0 V (100 g)</td><td>0.5 mm</td><td>22–46 mm</td></tr>
+<tr><td>Rest point, arriving from above vs below</td><td>identical</td><td>4 mm apart</td></tr>
+<tr><td>Final error after a 0.5 rad elbow step</td><td>0.03°</td><td>3.9°</td></tr>
+</tbody></table></div>
+<p><strong>The honest model also has a memory.</strong> With 100 g at full reach, the gripper rests 33 mm low if the load is added to a stationary arm, and 50–54 mm low if the arm moved there. Friction holds whatever the motion leaves behind. Small, fast corrections (a ±3° ripple at 3 Hz on a slow move) mostly disappear into the gearbox. The stock model tracks both perfectly, and a real STS3215 won't.</p>
+<p><img loading="lazy" src="compare.jpg" alt="Gripper sag for the stock servo, BAM M1 and BAM M6 across poses and payloads, and a 0.5 rad elbow step response"></p>
+
+<h2>03 / Re-running a gate that already passed</h2>
+<p><strong>A better model is only useful if it re-checks earlier claims.</strong> One of our workcell gates drives the arm to 60 mm above a work datum and passes if it arrives within 20 mm. It passed with the stock servo, at 0.4 mm. We re-ran it unchanged except for the actuators. It still passes, at 4–6 mm from empty to 300 g, and it holds across the whole randomized friction and voltage range. So that gate was fine. But anything tighter than about 5 mm near that pose was resting on a servo that doesn't exist: an insertion, a fixture that has to seat, a tool that has to find its datum. Those claims are now a band to check, not a point to trust.</p>
+
+<h2>04 / Closing the loop on real hardware</h2>
+<p><strong>BAM's fit is Rhoban's servos on Rhoban's bench, not ours.</strong> So the last piece is a loop that corrects the model from recordings of a real arm:</p>
+<ul>
+<li>a recorder moves one joint through BAM-style test motions: a speed-ramped sine sweep, slow raise and lower, steps, and ripple</li>
+<li>a replay runs the same commands in the sim with each model and scores the error</li>
+<li>a fit corrects the friction, gain and inertia to match</li>
+</ul>
+<p>We verified the loop on stand-in recordings with a known answer: M6 with friction ×1.4, gain ×0.85 and real encoder resolution. The fit recovered friction ×1.404 and gain ×0.851, and error on held-out data fell from 1.10° to 0.02°, the encoder's resolution.</p>
+<p><img loading="lazy" src="replay.jpg" alt="Replay of four test trajectories on the elbow: measured trace against stock, M1 and M6 simulations"></p>
+
+<h2>What isn't done</h2>
+<p><strong>No real arm has been recorded yet.</strong> Every SO-101 number above comes from BAM's fit, not our servos. The recorder is written against lerobot's arm interface but hasn't touched hardware. Backlash isn't modelled yet. The fitted model covers the standard 7.4 V follower servo; the 12 V variant and the leader arm's lower-ratio servos need their own recordings. That's the point of <strong>the simulation is a cache of reality</strong>: the numbers are marked as predictions until a measurement replaces them, and when one does, every gate re-runs against it.</p>
+
+<h2>Who did what</h2>
+<p>We found BAM and Microduck and set the goal: sims whose claims hold on hardware, across everything PUNKFAB builds. Claude read the paper and both codebases, and wrote and verified the models, the SO-101 comparison, the gate re-check and the record, replay and fit tools. It also caught its own backdrive rule of thumb when BAM's data contradicted it.</p>
+<p>Everything is open in <a href="https://github.com/punkfab/robot-actuators">punkfab/robot-actuators</a>, under <code>friction/</code> and <code>sts3215/</code>, with the project-wide plan in <code>REAL2SIM.md</code>. Got an assembly that should be proven in simulation, with its actuators modelled honestly, before it's built? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
