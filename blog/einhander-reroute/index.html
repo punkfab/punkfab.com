@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Re-routing einhander: the tail we hand-patched was an export bug — PUNKFAB log</title>
+<meta name="description" content="We re-ran the code-driven layout pipeline for einhander, a 4-layer RP2040 USB-MIDI board, with nobody touching it, and compared it to the board we shipped in July. The tail we had been hand-patching was one export bug: three top-side capacitors were described to the router as mirrored bottom-side parts. With that fixed, the unattended run has no shorts and two open nets." />
+<link rel="canonical" href="https://punkfab.com/blog/einhander-reroute/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/einhander-reroute/" />
+<meta property="og:title" content="Re-routing einhander: the tail we hand-patched was an export bug" />
+<meta property="og:description" content="We re-ran our PCB pipeline on a 4-layer RP2040 board with nobody touching it. The tail we'd hand-patched was one export bug: three capacitors described to the router as mirrored. Fixed, the unattended run has no shorts and two open nets." />
+<meta property="og:image" content="https://punkfab.com/blog/einhander-reroute/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/einhander-reroute/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="Two copper plots of the same 4-layer keyboard board side by side: the hand-finished board shipped in July, and today's unattended route with no shorts and two open nets." />
+<meta property="article:published_time" content="2026-10-01T18:00:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Re-routing einhander: the tail we hand-patched was an export bug" />
+<meta name="twitter:description" content="We re-ran our PCB pipeline on a 4-layer RP2040 board with nobody touching it. The tail we'd hand-patched was one export bug. Fixed, the unattended run has no shorts and two open nets." />
+<meta name="twitter:image" content="https://punkfab.com/blog/einhander-reroute/card.jpg" />
+<meta name="twitter:image:alt" content="Two copper plots of the same 4-layer keyboard board side by side: the hand-finished board shipped in July, and today's unattended route with no shorts and two open nets." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">pcb · routing · post-mortem</p>
+  <h1>Re-routing einhander: the tail we hand-patched was an export bug</h1>
+  <p class="meta">2026-10-01 · Dan Newcome</p>
+  <article class="post">
+<p><strong>In July we shipped einhander, a one-handed USB-MIDI keypad on a 4-layer RP2040 board, and getting its routing clean took a stack of patch scripts written for that one board.</strong> Our PCB pipeline is code first: the circuit is TSX in <a href="https://tscircuit.com">tscircuit</a>, it is exported to KiCad and to a Specctra DSN file, Freerouting routes the DSN, and the routes are injected back into KiCad and checked. Unattended runs of it on einhander ended with shorts and open nets around the voltage regulator. We had filed that under "the autorouter can't do dense corners" and finished the corner by hand.</p>
+<p>Today we ran the whole pipeline again, with nobody touching it, and put the result next to the July board to see how far it had come. It turned out the corner was never the router's fault.</p>
+<p><img loading="lazy" src="compare.jpg" alt="Two copper plots of the same board. Left, the shipped July board, hand-finished. Right, today's unattended route: the same key matrix, MCU and USB corner, with longer diagonal runs out to the keys, no shorts and two open nets."></p>
+
+<h2>01 / The unattended run, before anything changed</h2>
+<p><strong>32 seconds, end to end, and the same failure as always.</strong> Placement passed its checks, Freerouting finished in about six seconds, and after injection into KiCad the design-rule check found one short (VBUS to RUN) and six unconnected items. They looked like the July failures.</p>
+<p>This time, before reaching for a patch, we listed the seven defects. <strong>Every one of them was on one of three capacitors</strong>: C_IN and C_OUT around the 3.3 V regulator, and C_LED on the far side of the board. All three are 0805 parts on the top side. And each one had the same signature: a track on the bottom layer ending exactly on the <em>other</em> pad of the part, with no via between layers. A dense corner doesn't produce that. It looks like the router believed those parts were somewhere else.</p>
+
+<h2>02 / The router was routing a different board</h2>
+<p><strong>It was.</strong> The DSN file describes each footprint once, as an "image", and every part that uses it points at that image. tscircuit's exporter names images by footprint, so all the 0805 capacitors share one. On einhander that image was written from C11, a decoupling capacitor that sits on the <em>bottom</em> of the board. So the shared image describes a bottom-side part: pads on the bottom copper layer and mirrored, pin 1 where pin 2 should be. The three top-side 0805s inherited it.</p>
+<p>The KiCad file from the same export gets every part right, so the two files disagreed and nothing complained. Freerouting faithfully routed the board it was given, in which C_IN, C_OUT and C_LED were mirrored bottom-side parts. In the real board those tracks arrive on the wrong layer at the wrong pad.</p>
+<p><img loading="lazy" src="corner.jpg" alt="Two close-ups of the regulator corner. Top, the raw run: bottom-layer stubs ending on the wrong pads of C_IN and C_OUT, one short and four open connections. Bottom, the same corner after the DSN fix, routed cleanly on the top layer."></p>
+<p>The fix is a small step before routing, <code>dsn_split_sides.py</code>. It takes every pin in the DSN, works out where it lands on the board, and compares that with where KiCad puts the same pad and on which side. A part that disagrees gets its own image, rebuilt from the KiCad pads. The comparison has to be done in board coordinates: the RP2040 sits rotated by 90 degrees, and the two files store its pad offsets in different frames, so a naive comparison flagged it as wrong when it wasn't. On einhander the step changes exactly the three capacitors and nothing else, and running it twice changes nothing.</p>
+
+<h2>03 / Before and after, with nobody touching it</h2>
+<div class="table-wrap"><table>
+<tr><th></th><th>Shipped, July (hand-finished)</th><th>Unattended, before the fix</th><th>Unattended, after the fix</th></tr>
+<tr><td>Shorts</td><td>0</td><td>1</td><td><strong>0</strong></td></tr>
+<tr><td>Unconnected</td><td>0</td><td>6</td><td><strong>2</strong></td></tr>
+<tr><td>Dangling tracks</td><td>2</td><td>3</td><td><strong>0</strong></td></tr>
+<tr><td>Board-specific patch scripts</td><td>3</td><td>none</td><td><strong>none</strong></td></tr>
+<tr><td>Track length</td><td>1464 mm</td><td>1461 mm</td><td>1421 mm</td></tr>
+<tr><td>Vias</td><td>49</td><td>35</td><td>32</td></tr>
+<tr><td>Ground and 3.3 V on signal layers</td><td>485 mm</td><td>544 mm</td><td>507 mm</td></tr>
+</table></div>
+<p><strong>The unattended board uses less copper and fewer vias, and it is not yet better.</strong> Look at the key matrix in the first picture: the July board runs each key line in short straight segments, and today's run takes long diagonals across the board. Both are electrically fine; the July one is easier to inspect and to rework.</p>
+<p>Two of the three patch scripts in the July board repaired the regulator corner at hard-coded coordinates, deleting and redrawing copper around C_IN and C_OUT. One of them broke the first time a reroute moved a track. A finishing script that needs literal coordinates is a good sign that something upstream is wrong.</p>
+
+<h2>04 / Our own check was lying, too</h2>
+<p><strong>The pipeline's last step printed "RESULT: CLEAN" on a board with two open nets.</strong> Our DRC triage script sorts the KiCad report into placement problems, real shorts and cosmetic noise, and decides pass or fail. It counted unconnected items in its summary but left them out of the verdict. A board that isn't connected is not clean, and it now fails. Any older "CLEAN" from this script deserves a second look at the unconnected count.</p>
+
+<h2>05 / What's still open</h2>
+<p><strong>Two nets, and both are Freerouting's.</strong> With the capacitors fixed, Freerouting leaves the QSPI clock between the RP2040 and its flash out of its output entirely, with no wire at either pad, while reporting the run complete. It does that on every run. The second, USB D+, stops one pad short of the connector's second D+ contact. We tried three ways to get the router to finish:</p>
+<ul>
+<li><strong>Route only what's left.</strong> Feed every finished wire back in as fixed and ask for a second pass. Freerouting 2.2.4 stalls after a pass or two, even with only ten wires fixed.</li>
+<li><strong>A newer Freerouting.</strong> Version 2.4.1 produced 1,376 violations on the same file and took 90 seconds per optimizer pass.</li>
+<li><strong>Run it longer.</strong> More passes give the same result; the clock net never appears.</li>
+</ul>
+<p>So the last two nets are a few minutes of hand-routing in KiCad, or a small finisher that routes only the open nets around existing copper. We would rather build the finisher, because the point of the exercise is a board that comes out clean without us.</p>
+
+<h2>06 / What changed since July</h2>
+<p><strong>The pipeline didn't get smarter. We stopped trusting the story we'd told about it.</strong> In July we read the shorts as router weakness and fixed them where they appeared. This time we asked what the seven defects had in common before fixing any of them, and that pointed upstream. The rerun, the diagnosis, both fixes and the measurements above were done by Claude in one session of under an hour, starting from "try this again side by side with the original".</p>
+<p>The fix, the stricter check, the finishing scripts from einhander and these notes are now in the <code>pcb-layout</code> skill at <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>, including the dead ends above so nobody repeats them. If you route tscircuit exports with Freerouting and have parts of the same footprint on both sides, check them. Have a board whose last ten percent always ends up done by hand? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

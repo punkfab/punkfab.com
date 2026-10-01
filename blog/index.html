@@ -25,6 +25,11 @@
   <ul class="postlist">
     <li>
       <span class="date">2026-10-01</span>
+      <a class="title" href="/blog/einhander-reroute/">Re-routing einhander: the tail we hand-patched was an export bug</a>
+      <p>We re-ran our code-driven PCB pipeline on einhander, a 4-layer RP2040 USB-MIDI board, with nobody touching it, and put it next to the board we shipped in July. The shorts we had blamed on the autorouter came from the export: three top-side capacitors were described to the router as mirrored bottom-side parts. Fixed, the unattended run has no shorts and two open nets, and our own DRC check turned out to call open nets clean.</p>
+    </li>
+    <li>
+      <span class="date">2026-10-01</span>
       <a class="title" href="/blog/cadsketch-in-codex/">CADSketch in Codex: a sketch the agent edits with you</a>
       <p>Our sketch-first CAD editor is now a plugin for Codex and the ChatGPT desktop app. It opens in the sidebar, opens .cadsketch and .dxf files from your workspace, and publishes 18 tools so the agent moves vertices, adds holes, sets dimensions and exports STL in the sketch you have open, one undo step at a time. Two commands to install, and four things a stand-in host caught before any user did.</p>
     </li>
