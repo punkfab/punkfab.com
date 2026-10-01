@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The battlebot can't flip its twin: an antweight designed for robots to assemble — PUNKFAB log</title>
+<meta name="description" content="Case study: a 1 lb antweight combat robot designed for robotic assembly from day one, as a demo for software-defined manufacturing. The assembly gate caught six defects before any print; the MuJoCo duel showed a servo lifter can't flip a same-size twin, for geometric reasons rather than torque; and the work made the assembly, not the part, the top-level design artifact, with the sim and the 3MF print plates generated from it." />
+<meta property="og:title" content="The battlebot can't flip its twin: an antweight designed for robots to assemble" />
+<meta property="og:description" content="A 176 g printed antweight with a wedge and servo lifter, designed so a robot can put it together. The assembly gate caught six defects before printing, the sim showed a rotary lifter can't flip its twin, and the assembly IR now generates the sim and the print plates." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/antweight-first-slice/exploded-recipe.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">case study · design for assembly</p>
+  <h1>The battlebot can't flip its twin: an antweight designed for robots to assemble</h1>
+  <p class="meta">2026-09-30 · Dan Newcome</p>
+  <article class="post">
+<p><strong>We wanted a demo that people stop and watch, and that also exercises the whole pipeline: a combat robot.</strong> It's a 1 lb antweight, 3D printed, with a wedge and a servo-driven lifter so that two of them can actually fight without a spinning blade in the room. The other constraint is the one that makes it a punkfab project and not a hobby build: it has to be <em>designed for a robot to assemble it</em>. Every part has to go in along a straight line that a pick-and-place cell could follow, there should be one fastener family, and there should be no loose wires.</p>
+<p>This post covers the first day. It produced a parametric bot at 176 g that passes its part, mass, assembly and derivation gates. Its weapon gate is red: in simulation, the lifter cannot flip a copy of itself, and the reason is geometry, not motor torque. The day also changed how we structure designs. Partway through, the question "is the simulation re-describing the geometry?" turned out to have an uncomfortable answer. The fix was to make the <em>assembly</em>, not the part, the design artifact that everything else is generated from.</p>
+<p><img loading="lazy" src="exploded-recipe.jpg" alt="Exploded view of the antweight: the dark chassis tub at the bottom, two N20 motors and a blue servo above it, then the yellow battery, the green carrier board, the orange lid, the orange lifter fork at the front, and one wheel pulled out sideways. Each part is offset along the direction it is installed in the assembly recipe."></p>
+
+<h2>01 / The brief, and the word "cell"</h2>
+<p><strong>Antweight, low end of the class.</strong> Fairyweight (150 g) would print faster but leaves no room for a battery, an ESP32 and a servo; antweight (454 g) does. The weapon is a wedge plus a servo lifter: it's safe, easy to see, and pushing and lifting are the contact problems MuJoCo handles well. Control is an ESP32 driven from a phone rather than a hobby RC receiver, because a custom carrier board is what eventually removes the wiring harness from the assembly. The drive is two-wheel skid steer. Our locomotion library has a three-omni-wheel base, but omni and mecanum rollers have almost no sideways grip, and a pushing robot gets shoved sideways. Skid steer goes back into that library as a new modality.</p>
+<p>The project also forced a naming decision. "Cell" already meant three different things across our repositories, so we fixed the vocabulary. A <strong>design block</strong> is a reusable design unit (a wheel module, a lifter). A <strong>build cell</strong> is a physical factory station that does one class of operation: drive a screw, press a heat-set insert, press-fit a hub, pick and place. A product is neither; it is a <strong>recipe</strong>, an ordered set of operations routed across build cells. Whether we end up with one cell per operation type or one cell per product is still open, and this bot's recipe is the first evidence.</p>
+
+<h2>02 / One parameter file, parts placed by mates</h2>
+<p><strong>Everything shared lives in one frozen dataclass, so a design variant is <code>P(arm_len=64)</code>.</strong> The bought parts (N20 gearmotors, a micro metal-gear servo, a 2S 300 mAh LiPo, the carrier board) are modelled as envelopes with a mass and named mate points. A layout module turns the parameters into datums, and the chassis grows its locating features from those datums: U-saddles for the motors, slotted blocks that capture the servo's mounting ears, posts with locating pins for the board, and a low fence for the battery. The assembly then snaps every part onto the same datums, so a feature and the part it locates cannot drift apart.</p>
+<p>The bot weighs 176 g, which leaves 278 g of headroom under the class limit. 75 g of that total is catalog-nominal and not yet weighed, and printed mass is CAD volume times density times a fill factor that the first prints will calibrate. It also drives upside down: the wheels stand 3.4 mm proud of the lid.</p>
+
+<h2>03 / What the assembly gate caught (six defects, zero prints)</h2>
+<p><strong>The assembly recipe is code: 17 steps, each naming the build-cell operation it needs, the parts it moves and the direction they travel.</strong> The gate sweeps each part in along that direction from 40 mm away, checking it against everything already installed, with exact overlap volumes from the boolean engine. It reuses the interference checker from our manufacturing-orchestration code by reference rather than copying it. A static fit check and an arm-swing check run alongside it.</p>
+<ul>
+<li>The motor shafts pass through the side walls, so a motor cannot be dropped in from above. The same is true of the servo's output spline. The fix is the standard one: keyhole slots open to the rim, which the lid caps, so it also retains the motors vertically.</li>
+<li>That change suggested a better lifter mount. The fork now has downward-open notches and drops onto two keyed hubs, with one screw per side to retain it, instead of needing to be threaded onto a shaft sideways.</li>
+<li>The first keyed hub had a 0.4 mm wall around the spline bore. Hub radius went from 3 to 4.5 mm.</li>
+<li>Widening the wall slot to suit the bigger hub left the passive pivot boss as a separate floating solid. The boss is now wider than the slot so it bonds to the wall around it.</li>
+<li>The wheel hub's D-bore was on the outboard face, a frame-convention bug the press-fit sweep found when the hub hit the motor 5 mm before seating.</li>
+<li>The best one: the servo's rear mounting ear passes straight through a board post on the way down. At the final pose everything looked fine, because the ear-slot cut had carved a notch into that post. The ear just can't get <em>down</em> to the notch. Only a swept check finds that. The board got 4 mm shorter.</li>
+</ul>
+<p>A seventh defect came from the simulation rather than this gate. At rest the lifter's side plates dipped 4 mm below the ground plane, so the bot sat on them and the wedge never touched the floor. There is now a gate that only tyres and the wedge may reach the floor.</p>
+<p>The design-for-assembly report at the end: five build-cell operation types, one fastener family (six M2 screws, five M2 heat-set inserts), and one manual step, which is connecting the wiring. On our op-graph scheduler, with one server per operation type and nominal step times, it schedules in 214 s against 266 s run sequentially. The step times are placeholders; the useful output is which operations exist and in what order. The manual wiring step is the open problem, and it is why the board will carry board-mount connectors.</p>
+
+<h2>04 / The weapon gate is red, and that's the useful result</h2>
+<p><strong>The duel is two copies of the bot in MuJoCo.</strong> A charges and, on wedge contact, lifts to its stop while still pushing; B brakes, as an H-bridge does. The drive motors are a linear torque–speed model and the servo is a P loop that saturates at its stall torque and loses torque with speed. These are deliberately not ideal actuators; our <a href="/blog/honest-actuators/">last post</a> showed how much an ideal servo flatters a sim. Torques are catalog-nominal, so the gate re-runs at 0.7× and 1.3× and requires a pass across the whole band.</p>
+<p><img loading="lazy" src="duel-rear.jpg" alt="Four MuJoCo frames: bot A drives up behind its twin, gets its wedge under the twin's rear, the arm swings up and pops the twin's rear into the air, and the twin drops back as the arm reaches vertical"></p>
+<p>The first answer was "the servo stalls at 28°". That was wrong, and it was our bug: MJCF reads joint ranges in degrees by default, we had written radians, and the arm's up-stop was effectively at 1.9°. What looked like servo saturation was the soft joint limit pushing back. Measuring the contact torque on the arm directly showed −0.05 N·m against a servo putting out +0.34, which didn't balance, and that led to the joint limit. With the units fixed, the arm reaches its stop without ever saturating, and the twin still doesn't go over. A sweep over arm length and servo choice, with the twin approached from the rear and from the side:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>arm length</th><th>max twin tilt, rear</th><th>max twin tilt, side</th><th>flipped</th><th>servo at torque limit</th></tr></thead>
+<tbody>
+<tr><td>52 mm</td><td>13–14°</td><td>11–12°</td><td>no</td><td>never</td></tr>
+<tr><td>64 mm</td><td>13°</td><td>15–18°</td><td>no</td><td>never</td></tr>
+<tr><td>76 mm</td><td>12–13°</td><td>19°</td><td>no</td><td>never</td></tr>
+<tr><td>88 mm</td><td>12–13°</td><td>19–20°</td><td>no</td><td>never</td></tr>
+</tbody></table></div>
+<p>Ranges span three micro servos (ES08MA II, MG90S, MG92B, 2.0–3.5 kg·cm claimed). Driving deeper under the twin before lifting, or pushing harder while lifting, changes nothing. The hand calculation explains why. To tip the twin over its front edge, its centre of mass has to pass over the front contact, which means tilting it close to 80°: about 130 mm of lift at the rear. A rotary lifter's tip also swings <em>backward</em> as it rises, so the twin slides off the end long before then. Servo torque isn't the constraint; reach and the arc are.</p>
+<p>The more interesting measurement came from asking what the lift is good for, if not flipping. With B driving backward into A at full throttle, we measured how far A shoves it and how often B's drive wheels are off the floor:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>A's lifter</th><th>B shoved (2.2 s)</th><th>B's tyres off the floor</th></tr></thead>
+<tbody>
+<tr><td>at rest (passive wedge)</td><td>73 mm</td><td>75% of the time</td></tr>
+<tr><td>full swing to the stop</td><td>37 mm</td><td>7%</td></tr>
+<tr><td>held at 5°</td><td>31 mm</td><td>100%</td></tr>
+<tr><td>held at 20°</td><td>21 mm</td><td>100%</td></tr>
+</tbody></table></div>
+<p>The passive wedge does most of the work. A full swing makes things worse: the twin pops up, falls off and gets its traction back. Holding a small lift keeps B's wheels off the floor all the time, yet A pushes it less far, and we don't know why yet; that is the next instrumented question. The gate stays red because it encodes the requirement, not the hope. For now we're keeping the simple lifter. The obvious next mechanism is a four-bar lifter whose tip rises nearly straight up, and that need drove the next part of the day.</p>
+
+<h2>05 / The assembly is the design artifact</h2>
+<p><strong>The question that changed the structure: is the MuJoCo model referencing the build123d geometry, or describing it again?</strong> The honest answer was partly both. The visuals were the real exported meshes and the masses came from the CAD. The collision shapes, though, were boxes and cylinders typed in from the parameters, the wedge's collision shape repeated the arm's polygon maths, the inertia tensors were box approximations, and the bodies and joints were declared again in the sim file. Any of those could drift from the CAD without a test noticing.</p>
+<p>The fix was to stop treating the part as the unit of design. The bot is now written out as an <strong>assembly IR</strong>, featuretree's neutral assembly format: 14 occurrences (each part's own local geometry plus its placement) and 13 mates (fastened within each rigid group, revolute for the two wheels and the lifter), with mobility 3. Everything else is generated from that file:</p>
+<ul>
+<li><strong>The MuJoCo model.</strong> Bodies are the fastened groups, joints are the mates, and geometry is each part's own mesh, with inertia integrated from it. Collision uses the convex hull, except where the hull is wrong: a U-fork's hull fills the gap between its plates, so the arm declares its own convex pieces, built by the same function that builds the arm. The sim file no longer contains any geometry. It adds the arena, the actuator laws and the tactics, and nothing else. A gate checks the generated model's mass against the CAD roll-up: 176.29 g both ways.</li>
+<li><strong>3MF.</strong> 3MF has no parameters and no joints, so it is never the design source; it is what the design is delivered <em>as</em>. One package holds the whole assembly as a components object and carries the assembly IR inside the zip; read back through lib3mf, every part sits within 0.006 mm of where the CAD puts it. A second package is the same assembly with the arm raised, posed by the kinematic solver. The real manufacturing use is print plates: printed parts in their print orientation, packed onto the bed, one plate per material. The print orientation is a design-for-manufacture decision stored with each part. Our first orientation for the arm stood it 91 mm tall; flat, it is 16.5 mm. The TPU tyres are exported with their bore 0.4 mm undersized, because the stretch is what holds them on.</li>
+</ul>
+<p><img loading="lazy" src="print-plates.jpg" alt="The PETG print plate: the dark chassis tub with its rim-open slots, the orange lid printed upside down with its clamp bosses up, the lifter fork lying flat, two wheel hubs and two small keyed pivot hubs, all on a 256 mm bed"></p>
+<p><strong>Loop-closing mates.</strong> A four-bar is a closed loop, and the assembly format only allowed a tree of mates, which is what keeps it compatible with cadgen's sidecar. So closures now live in their own list next to the tree: a revolute, spherical or fastened constraint between two occurrences that the tree already connects. Nothing that walks the tree ever sees a cycle. That needed four things. Validation rejects a "closure" between parts the tree doesn't already connect, since that's just a mate. The mobility count treats planar loops as planar, so a four-bar comes out at 1 degree of freedom where the textbook spatial Grübler count says −2. A small numpy pose solver drives some joints and solves the rest so every loop stays closed, continuing from the authored pose so a four-bar doesn't jump into its crossed form. And the MJCF emitter writes closures as MuJoCo equality constraints, one point constraint for a planar loop and two along the axis for a spatial one. The test is a Grashof crank-rocker checked against the closed-form solution, not against itself. The solver matches it to 0.001° over a full crank turn, and in MuJoCo the rocker tracks within the test's 0.5° with the loop closed to within 0.2 mm. featuretree's full suite passes, including the new loop and 3MF tests, and the assembly work is merged.</p>
+
+<h2>06 / What's left before printing</h2>
+<p><strong>Every unmeasured number is labelled as such, so the list is short and specific.</strong> Weigh the bought parts and the first prints, and write the printed-to-solid mass ratio back into the parameters. Bench the servo's stall torque and the N20s' speed, stall torque and gearbox backdrive friction. The last one is a guess in the sim, and it decides how hard a braked opponent is to push. Move the printed parts from build123d scripts into featuretree's part IR so FreeCAD and Onshape files come for free; that needs one new primitive, an additive extrude on an arbitrary plane, the mirror of the existing placed cut. And design the board-mount connector scheme that turns the one manual step into a mate-the-connector operation a build cell can do.</p>
+<p>The CAD, recipe, sim and gates are open at <a href="https://github.com/punkfab/battlebot">punkfab/battlebot</a>, with every gate one <code>make</code> target away. The assembly IR, pose solver, MJCF and 3MF emitters are in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>; the background on the IR itself is in <a href="/blog/featuretree-ir/">One feature tree, several CAD systems</a>. Want a machine designed for the robot that will build it? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+</footer>
+</body>
+</html>
