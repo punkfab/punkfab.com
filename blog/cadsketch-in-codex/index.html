@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CADSketch in Codex: a sketch the agent edits with you — PUNKFAB log</title>
+<meta name="description" content="CADSketch is now a plugin for Codex and the ChatGPT desktop app. The editor opens in the sidebar, opens .cadsketch and .dxf files from your workspace, and publishes 18 tools so the agent works in the same sketch you are looking at. Install instructions, what it does, and what testing caught." />
+<meta property="og:title" content="CADSketch in Codex: a sketch the agent edits with you" />
+<meta property="og:description" content="A CAD sketch editor as a Codex plugin: sidebar app, file viewer for .cadsketch and .dxf, and 18 tools that let the agent move vertices, add holes, set dimensions and export STL in the sketch you have open. Two commands to install." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/cadsketch-in-codex/hero.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">cadsketch · codex plugin</p>
+  <h1>CADSketch in Codex: a sketch the agent edits with you</h1>
+  <p class="meta">2026-10-01 · <a href="https://github.com/punkfab/cadsketch">punkfab/cadsketch</a> · plugin 0.3.0 · <a href="https://cadsketch.ai">cadsketch.ai</a></p>
+  <article class="post">
+
+<p><a href="https://cadsketch.ai">CADSketch</a> is our sketch-first CAD editor: draw a rough shape and it snaps to clean, constrained, dimensioned geometry, then extrudes to a part. It ships on the App Store and runs in the browser. As of today it is also a plugin for Codex and the ChatGPT desktop app.</p>
+
+<p>The plugin does three things. It puts the editor in the app's sidebar. It opens <code>.cadsketch</code> and <code>.dxf</code> files from your workspace in that editor. And it gives the agent 18 tools that act on the sketch you have open, so "make it 95 mm wide and add a hole in each corner" changes the part in front of you, one undo step at a time.</p>
+
+<p><img loading="lazy" src="hero.jpg" alt="The CADSketch editor with bracket.cadsketch open. On the left a 3D wireframe of an L-shaped bracket with three holes. On the right the same part as a 2D sketch with its dimensions, 60, 45, 30 and 15 mm, and small H and V markers on the edges showing horizontal and vertical constraints."></p>
+
+<h2>Install</h2>
+<p>You need Node.js 22 or later and a recent Codex. We tested with Codex 0.157 and the ChatGPT desktop app, which is available for macOS and Windows and in preview for Linux.</p>
+
+<pre><code>codex plugin marketplace add punkfab/cadsketch
+codex plugin add cadsketch@cadsketch</code></pre>
+
+<p>Restart the desktop app. <strong>CADSketch</strong> appears in the sidebar. There is nothing to build and no account to create: the plugin's server is one bundled file that the app starts on your machine.</p>
+
+<p>Three things to try:</p>
+<ul>
+<li>Click <strong>CADSketch</strong> in the sidebar and draw a rough rectangle. It straightens, closes and extrudes.</li>
+<li>In a project folder, ask: <em>"Create bracket.cadsketch for a 60 × 30 mm L-bracket, 5 mm thick, with three M4 holes."</em> Then open the file.</li>
+<li>With the file open: <em>"Make it 8 mm thick and move the holes 2 mm further from the edges."</em></li>
+</ul>
+
+<h2>What you get</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Where</th><th>What</th></tr></thead>
+<tbody>
+<tr><td>Sidebar</td><td>the editor as a full tab, next to a conversation</td></tr>
+<tr><td>Thread</td><td>the editor as a panel beside the conversation you are in</td></tr>
+<tr><td>Files</td><td><code>.cadsketch</code> and <code>.dxf</code> open in the editor instead of as text</td></tr>
+<tr><td>Agent</td><td>18 tools on the open sketch, a drawing tool, a headless checker, and a skill that teaches the workflow</td></tr>
+</tbody></table></div>
+
+<h2>The file</h2>
+<p>A <code>.cadsketch</code> file is the part as plain JSON. Millimetres, X right, Y up. The outline closes itself, and a hole is a centre and a radius.</p>
+
+<pre><code>{
+  "cadsketch": 1,
+  "units": "mm",
+  "parts": [
+    { "name": "bracket", "depth": 5,
+      "profile": [[0,0],[60,0],[60,30],[45,30],[45,15],[0,15]],
+      "holes": [[10,7.5,2.25],[35,7.5,2.25],[52.5,22,2.25]] }
+  ]
+}</code></pre>
+
+<p>The agent writes this with its ordinary file tools. While the file is open in the editor, the two stay in step:</p>
+<ul>
+<li>When the agent changes the file, the editor reloads it.</li>
+<li>When you drag a point, the editor saves the file. It writes with the version it last read, so if the agent changed the file in the meantime you get a reload, not a silent overwrite.</li>
+<li>Opening a file never rewrites it.</li>
+<li>A sketch that is not a closed shape yet is not saved. The editor says so and keeps your work on the canvas.</li>
+</ul>
+
+<h2>The agent works in the sketch you have open</h2>
+<p>The first version could only draw: the agent described a part and the editor showed it. Asking for a small change meant redrawing everything, which threw away any dimensions and constraints you had set. So the editor now publishes its own tools while it is open.</p>
+
+<p>Take a plate and the request "make it 95 mm wide and add an M4 hole 8 mm in from each corner." The two pictures below come from our test host making the calls that request turns into, against the real editor.</p>
+
+<p><img loading="lazy" src="edit-before.jpg" alt="The editor with plate.cadsketch open: a plain 80 by 40 mm rectangle, 4 mm thick, with no holes. The sketch shows the dimensions 80 and 40 and H and V constraint markers on its edges."></p>
+
+<p>That is six calls: <code>get_sketch</code> to read the part and find which edge is the 80 mm one, <code>set_dimension</code> to drive that edge to 95, and <code>add_hole</code> four times.</p>
+
+<p><img loading="lazy" src="edit-after.jpg" alt="The same plate after the six tool calls. It is now 95 mm wide, shown as a bold 95.0 on the bottom edge to mark a driving dimension, and has a hole near each corner. The title bar reads plate.cadsketch, saved."></p>
+
+<p>The bold <strong>95.0</strong> is a driving dimension. It keeps holding through later edits, by you or by the agent. The bar at the top says <em>saved</em>: the change is already in the file.</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>To</th><th>Tools</th></tr></thead>
+<tbody>
+<tr><td>read</td><td><code>get_sketch</code>, <code>screenshot</code></td></tr>
+<tr><td>change geometry</td><td><code>add_hole</code>, <code>move_hole</code>, <code>remove_hole</code>, <code>move_vertex</code>, <code>set_depth</code></td></tr>
+<tr><td>state intent</td><td><code>set_dimension</code>, <code>add_constraint</code>, <code>remove_constraint</code></td></tr>
+<tr><td>manage parts</td><td><code>add_part</code>, <code>select_part</code>, <code>delete_part</code>, <code>replace_parts</code></td></tr>
+<tr><td>step back</td><td><code>undo</code>, <code>redo</code>, <code>fit_view</code></td></tr>
+<tr><td>make a file</td><td><code>export_stl</code></td></tr>
+</tbody></table></div>
+
+<p>Each call runs through the same code a tap or a drag does. That makes it one step on the editor's undo stack, and you can undo the agent's edit with the same button you would use for your own. <code>screenshot</code> returns a picture of the editor, for when you say "this corner" and the agent needs to see which one. A wrong index comes back as an instruction, such as <em>vertex must be an index from 0 to 3</em>, so the agent can correct itself.</p>
+
+<h2>How it is built</h2>
+<p>The plugin is an MCP server plus a page the app renders. The page is small. It frames the same web build that runs at <a href="https://cadsketch.ai/app/">cadsketch.ai/app</a> and relays messages to it. There is no second editor, and the phone and browser versions are untouched: the bridge inside the app switches on only when it is opened as a plugin.</p>
+<p>The sidebar entry, the thread panel and the file viewer are OpenAI's <a href="https://github.com/openai/mcp-extensions">plugin extensions</a>, three entries of metadata on the server's tools. The editing tools use the open MCP Apps standard, in which a mounted app publishes tools of its own. No AI key ships with the plugin and the server calls no model. The app's own model does the thinking.</p>
+
+<h2>What the checks caught</h2>
+<p>The desktop app's interface does not run in CI, so we wrote a stand-in host that speaks the same protocol and drove the real editor with it. It runs 30 checks. Four problems turned up that reading the code had not:</p>
+<ul>
+<li><strong>A driven rectangle skewed.</strong> The first time a tool call drove one side of a plate to 95 mm, the plate became a trapezoid. A part given as coordinates carries no intent, so nothing held the other edges. Parts drawn by an agent now start with horizontal and vertical constraints on their axis-aligned edges, which is what the app already infers from a hand-drawn rectangle. We found this by looking at the output of the screenshot tool.</li>
+<li><strong>A washer came back as a disc.</strong> A round part with a hole was reported to the agent as a small disc with no hole. The export code took the last circle drawn as the body. It now takes the largest, which is what the solid builder had been doing all along.</li>
+<li><strong>The editor stalled in one sandbox.</strong> A host can sandbox the embedded frame so that it has no origin of its own. The editor's own downloads then count as cross-origin and were refused. One response header on the site fixed it, and the page now reports a reason code if the editor cannot start.</li>
+<li><strong>The app showed a stale page.</strong> Hosts cache the plugin's page by its address. An update was invisible until the address changed, so it is now versioned.</li>
+</ul>
+
+<h2>Limits</h2>
+<ul>
+<li>Parts are flat profiles extruded straight up. No fillets on the extruded edges, no lofts, no revolves.</li>
+<li>A <code>.cadsketch</code> file stores geometry only. Constraints and driving dimensions live in the editor session, and horizontal and vertical ones are inferred again when a file reloads.</li>
+<li>Arcs an agent sends are stored as short straight edges, so a rounded outline comes back with many vertices.</li>
+<li>The solver converges to about a micron. A side driven to 95 mm can read 94.999 in the saved file.</li>
+<li>We have run the plugin in the ChatGPT desktop app on Linux. The 18 editing tools are verified against the stand-in host, and we have not yet exercised every one of them in the real app.</li>
+<li>It is not in OpenAI's plugin directory yet. That submission is prepared and waiting on review steps. Until then, install it with the two commands above.</li>
+</ul>
+
+<h2>What's not new</h2>
+<p>OpenAI's sample plugin, <a href="https://github.com/openai/mcp-extensions/tree/main/plugins/bits-and-bolts">Bits &amp; Bolts</a>, opens STL and STEP files in a 3D viewer and was our reference for how a plugin is put together. Jake Fitzgerald showed a CAD viewer running as a Codex extension the day extensions shipped, on top of his <a href="https://github.com/earthtojake/text-to-cad">text-to-cad</a> skills, which generate CAD by writing and running scripts. What we are adding is an editor in place of a viewer: a sketch with constraints and dimensions that you and the agent both change, with the agent's edits landing as ordinary undo steps.</p>
+
+<h2>Who did what</h2>
+<p>We decided what the plugin should do and tried it in the app. Claude read the extension specification, wrote the server, the bridge and the tests, ran them, and found and fixed the four problems above.</p>
+
+<p>The source is public at <a href="https://github.com/punkfab/cadsketch">punkfab/cadsketch</a>, and <a href="https://github.com/punkfab/cadsketch/blob/main/mcp/README.md">mcp/README.md</a> covers the tools and the file format in full. Have a part that should be editable by you and your agent at the same time? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
