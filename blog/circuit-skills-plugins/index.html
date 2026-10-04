@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>circuit-skills in ChatGPT and Claude: a board viewer that runs the checks — PUNKFAB log</title>
+<meta name="description" content="Our code-driven PCB skills now ship as a Codex plugin for the ChatGPT desktop app and as a Claude Code mod. Both add a viewer for the routed board with every DRC marker on it, and give the agent the same checks the pipeline gates on. How to install each, and how they work." />
+<link rel="canonical" href="https://punkfab.com/blog/circuit-skills-plugins/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/circuit-skills-plugins/" />
+<meta property="og:title" content="circuit-skills in ChatGPT and Claude: a board viewer that runs the checks" />
+<meta property="og:description" content="Our code-driven PCB skills now ship as a Codex plugin for the ChatGPT desktop app and a Claude Code mod: a viewer for the routed board with every DRC marker, and the checks the pipeline gates on." />
+<meta property="og:image" content="https://punkfab.com/blog/circuit-skills-plugins/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/circuit-skills-plugins/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="The circuit viewer showing a routed 4-layer keypad board: on the left the Codex plugin's board tab with layer toggles, on the right the Claude Code pane drawing the same board in coloured terminal cells beside the conversation." />
+<meta property="article:published_time" content="2026-10-04T18:00:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="circuit-skills in ChatGPT and Claude: a board viewer that runs the checks" />
+<meta name="twitter:description" content="Our code-driven PCB skills now ship as a Codex plugin for the ChatGPT desktop app and a Claude Code mod: a viewer for the routed board with every DRC marker, and the checks the pipeline gates on." />
+<meta name="twitter:image" content="https://punkfab.com/blog/circuit-skills-plugins/card.jpg" />
+<meta name="twitter:image:alt" content="The circuit viewer in Codex and in Claude Code, showing the same routed keypad board." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">release · codex plugin · claude code mod</p>
+  <h1>circuit-skills in ChatGPT and Claude: a board viewer that runs the checks</h1>
+  <p class="meta">2026-10-04 · Dan Newcome</p>
+  <article class="post">
+<p><strong>circuit-skills is how we design printed circuit boards with an agent: the circuit is code, placement is code, a router does the copper, and a set of checks decides whether the board is done.</strong> Until now it was skills and scripts. The agent ran them, read their output, and we looked at the board in KiCad when something went wrong. Today it ships in two new forms: a <strong>Codex plugin</strong> for the ChatGPT desktop app, and a <strong>Claude Code mod</strong>. Both add the thing that was missing, a view of the board inside the conversation, and both give the agent the same checks the pipeline uses.</p>
+<p><img loading="lazy" src="card.jpg" alt="The same routed keypad board in the Codex plugin's board tab, with layer toggles and DRC marker types on the left, and in the Claude Code pane, drawn in coloured terminal cells beside the conversation"></p>
+
+<h2>01 / Why a viewer, and not text-to-board</h2>
+<p><strong>The hard part of a board is not drawing it, it is knowing whether it is right.</strong> Our <a href="/blog/einhander-reroute/">einhander re-run</a> made that concrete. A router reported success while a net was missing, an export mirrored three capacitors, and our own check printed "CLEAN" with open nets. Every one of those showed up as DRC markers on the routed board; what found them was reading those markers, on the board, next to a verdict we trust. That is what these plugins put in front of you and the agent: the board that will actually be fabbed, the markers on it, and the gates' verdict.</p>
+
+<h2>02 / What you get in ChatGPT (Codex)</h2>
+<p><strong>A viewer with five tabs, opened from the sidebar, beside a conversation, or by clicking a <code>.kicad_pcb</code> or <code>.circuit.tsx</code> file in your workspace.</strong></p>
+<p><img loading="lazy" src="viewer-board.jpg" alt="The Board tab: the routed einhander keypad with front copper in red, back copper in blue, the outline in yellow, layer checkboxes and DRC marker types in a sidebar"></p>
+<p><strong>Board</strong> is the routed KiCad board, layer by layer. Inner planes start hidden, because a solid plane hides everything else. Every DRC marker sits on the copper it names. The types that block fabrication (shorts, crossings, open nets, clearance) are shown; the cosmetic ones are listed but hidden. Click a type to step through its markers:</p>
+<p><img loading="lazy" src="viewer-marker.jpg" alt="Zoomed in on the USB-C connector: an unconnected-item marker drawn as two orange circles joined by a line, where a USB D+ track stops one pad short"></p>
+<p><strong>Schematic</strong> and <strong>Netlist</strong> come from the tscircuit design, and the netlist filters by net, part or pin. <strong>3D</strong> is KiCad's own model of the routed board, orbitable.</p>
+<p><img loading="lazy" src="viewer-views.jpg" alt="Left, the auto-laid-out tscircuit schematic of the RP2040 keypad; right, the routed board in 3D"></p>
+<p><strong>Checks</strong> runs the pipeline's gates and says plainly what is failing:</p>
+<p><img loading="lazy" src="viewer-checks.jpg" alt="The Checks tab: Failing: drc_check, a line saying critical routing is not assessed, routing metrics, and each gate's output with pass/fail pills"></p>
+<p>The agent gets three tools: <code>open_board</code>, <code>check_board</code> and <code>get_netlist</code>. The viewer also tells the agent what is open and what the last check found, so "review the board I have open" works without paths. It refreshes on its own when the board file is saved, keeping your tab, zoom and layer choices.</p>
+
+<h2>03 / What you get in Claude Code</h2>
+<p><strong>A pane docked beside the conversation, drawn by a Claude Code mod.</strong> In a terminal it draws the board in coloured half-block characters, so it works in any terminal, not only ones that can show images. On Claude's desktop and editor surfaces it is written to draw an SVG instead.</p>
+<p><img loading="lazy" src="claude-pane.jpg" alt="Claude Code in a terminal: on the left, the /board command and its summary; on the right, a docked pane with the board drawn in red and blue cells inside a yellow outline, orange marks on the two open connections, the verdict FAILING: drc_check, routing metrics, a legend and buttons"></p>
+<p>That capture is a real session: <code>/board</code> on the einhander re-run, with no model call involved. The mod draws the board from its own geometry: front and back copper, pads, vias, holes and the outline. Open nets are drawn in orange, with a line between the two ends. Buttons step through the issues and zoom to them, switch between front and back, rerun the checks and reload. The pane redraws when the board is saved, and the status line keeps the verdict in view. The model gets the same three tools as in Codex.</p>
+
+<h2>04 / Install</h2>
+<p><strong>Both need</strong> Node.js 18+, KiCad 9+ with <code>kicad-cli</code> on the path, and Python 3 for the checks. The schematic and netlist need tscircuit installed in the project (<code>npm install</code> there). Nothing to build: the bundled files are committed.</p>
+<p><strong>ChatGPT desktop / Codex</strong>, from a clone of <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>:</p>
+<pre><code>codex plugin marketplace add /path/to/circuit-skills
+codex plugin add circuit-skills@circuit-skills</code></pre>
+<p>Then <strong>quit the app completely and reopen it</strong>. Closing the window is not enough: the app keeps a background server running, and that server only reads the plugin list when it starts. This caught us out on day one. <strong>Circuit viewer</strong> then appears in the sidebar. To update after a pull: <code>codex plugin marketplace upgrade</code>, remove and re-add the plugin, and quit and reopen again. Tested with Codex 0.157.</p>
+<p><strong>Claude Code</strong>, for one session:</p>
+<pre><code>claude --plugin-dir /path/to/circuit-skills/claude/circuit-viewer</code></pre>
+<p>Or for every session, including Claude Desktop's Code tab (which now has an <a href="https://support.claude.com/en/articles/10065433-install-claude-desktop">official Linux beta</a>), add it to <code>~/.claude/settings.json</code>:</p>
+<pre><code>"env": { "CLAUDE_CODE_PLUGIN_DIRS": "/path/to/circuit-skills/claude/circuit-viewer" }</code></pre>
+<p>Then <code>/board ~/your-project/pcb</code>, or ask Claude to open a board. The skills themselves (pcb-layout, circuit-sim, pcb-enclosure-fit, pcb-3d-render) come with the Codex plugin; for Claude Code, link them into <code>~/.claude/skills/</code> as before.</p>
+
+<h2>05 / How it works</h2>
+<p><strong>One backend, two front ends, and no new opinions about the board.</strong> Every view is made by the same tools the pipeline uses: <code>kicad-cli</code> exports each layer and the 3D model and runs DRC, <code>tsci</code> exports the schematic and netlist. The verdict comes from pcb-layout's own gate scripts, run unchanged:</p>
+<ul>
+<li><code>drc_check</code>: DRC sorted into placement problems, real shorts, crossings, copper over the edge, and open nets. Open nets block; until this week they did not.</li>
+<li><code>dfm_check</code>: what the fab checks and KiCad's DRC does not, such as hole-to-hole spacing and via drill and annular ring.</li>
+<li><code>check_floating</code>: pads reached only by copper on the other side of the board.</li>
+<li><code>check_critical_routing</code>: for boards with a routing-policy file, the declared USB, Ethernet and crystal nets are screened for layer use, vias, length and reference copper, and engineering review notes must match the current board. Without a policy, the viewer says critical routing is <em>not assessed</em>, so passing the other three is not read as release approval.</li>
+</ul>
+<p>The track, via and plane-copper figures come from a small reader for KiCad's board file. It matches KiCad's own numbers exactly on einhander (1463.8 mm of track, 49 vias), so neither front end needs KiCad's Python module. The layer images are exported in board coordinates, which is why each DRC marker lands exactly on the copper it is about.</p>
+<p><strong>The Codex plugin</strong> is an MCP app: a local server the app starts, and a single self-contained viewer page that asks the server for each view as you open its tab. <strong>The Claude mod</strong> runs inside Claude Code, where it cannot install anything or even learn its own folder. So it carries the backend with it: a 39 kB bundle, gate scripts included, which it runs with <code>node</code> by piping in the source. There is no install location and nothing to configure.</p>
+
+<h2>06 / Built by two agents</h2>
+<p><strong>Most of this was written by agents, in two different apps.</strong> Claude, in Claude Code, built the Codex plugin, the Claude mod and their tests. The tests run every tab in a real browser against the real server, and they caught a bug a real host would have hit: the project picker used a form, which ChatGPT's sandbox does not allow to submit. Meanwhile Codex, working inside ChatGPT on a board of its own (<a href="/blog/artnode-redrive/">the ArtNode re-drive</a>), opened two pull requests against the same repository. The first added live refresh, an optional FastRoute router, and a fix for pad positions on rotated parts, which the checks had been computing with the wrong rotation direction. The second added the critical-routing gate. Both landed after tests, and the new gate runs in both front ends.</p>
+
+<h2>07 / Limits</h2>
+<ul>
+<li>The schematic is tscircuit's automatic layout: complete, but busy. Pan and zoom make it usable.</li>
+<li>KiCad's 3D export has no part models for tscircuit footprints, so the 3D view is the board and its copper.</li>
+<li>The terminal picture is coarse at narrow widths: a wider pane shows more.</li>
+<li>Routing gaps still exist. On einhander, Freerouting leaves two nets open; the viewer shows them, it does not fix them.</li>
+<li>The plugin is not in the Codex directory; it installs from the repository. Tested on Linux only.</li>
+<li>The Claude mod has been run in a terminal; its desktop drawing (the SVG) has not been seen in Claude Desktop yet.</li>
+<li>The critical-routing gate needs KiCad's Python module, which only the system Python has.</li>
+</ul>
+<p>Everything is open at <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>, with <a href="https://github.com/punkfab/circuit-skills/tree/main/docs/history">the full history</a> of how it got here. Have a board you want routed, checked and seen before it is ordered? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
