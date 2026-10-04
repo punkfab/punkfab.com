@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A muscle-control paper, tried on two muscles — PUNKFAB log</title>
+<meta name="description" content="A 2026 Nature Communications paper controls an electrohydraulic muscle with a fitted static map plus a small PI loop. We tried the recipe in simulation on our shape-memory-alloy muscle cell, where it adds nothing, then on a model of the paper's own HASEL cell, where it reproduces. The difference is how fast the muscle is next to the feedback loop." />
+<meta property="og:title" content="A muscle-control paper, tried on two muscles" />
+<meta property="og:description" content="A fitted static map plus PI controls a HASEL muscle in a 2026 paper. In simulation it adds nothing on our SMA cell and reproduces on a HASEL cell. The difference is how fast the muscle is next to the feedback loop." />
+<link rel="canonical" href="https://punkfab.com/blog/sma-vs-hasel/" />
+<meta property="og:url" content="https://punkfab.com/blog/sma-vs-hasel/" />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/sma-vs-hasel/compare.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">case study · paper to simulation</p>
+  <h1>A muscle-control paper, tried on two muscles</h1>
+  <p class="meta">2026-10-04 · Dan Newcome</p>
+  <article class="post">
+<p><strong>We have a muscle design in simulation, and a new paper about controlling muscles.</strong> Ours is a "matrix muscle": an array of small shape-memory-alloy (SMA) wire cells, where cells side by side add force, cells end to end add stroke, and a controller decides which ones fire. The paper is Bettini, Kazemipour, Katzschmann and Haller, <a href="https://doi.org/10.1038/s41467-026-77664-0">Nonlinear spectral modeling and control of soft-robotic muscles from data</a> (Nature Communications, 2026). It looked close to what we were doing, so we tried its method on our cell. It didn't help. Then we modelled the paper's own kind of cell and tried again, and it did.</p>
+<p><strong>The reason is one ratio:</strong> how fast the muscle is, against how fast the feedback loop can see it. Everything here is simulation. Nothing has been built, and the second cell's numbers are assumptions we name below.</p>
+
+<h2>The paper's recipe</h2>
+<p><strong>The hardware is an elbow driven by two HASEL muscles.</strong> A HASEL is a row of oil-filled plastic pouches with electrodes on part of each one. Several kilovolts pull the electrodes together, the oil is squeezed into the rest of the pouch, and the pouch shortens. Theirs has 15 pouches in series and runs up to 8 kV.</p>
+<p><strong>The method assumes the muscle settles much faster than you ask it to move.</strong> If that holds, the output is just a fixed curve of the input.</p>
+<ul>
+<li>record a few trajectories under normal, slowly varying input</li>
+<li>fit the curve as a polynomial</li>
+<li>look up the inverse of that curve as feed-forward, and add a small PI feedback loop</li>
+</ul>
+<p>On their rig, PI alone tracked with 7.6° RMS error, feed-forward alone with 3.6°, and the two together with 2.4°. They measure "slowly" with a number ρ: how fast the reference changes, over how fast the muscle settles. Their test ran at ρ = 0.15.</p>
+
+<h2>01 / On our SMA cell, it adds nothing</h2>
+<p><strong>An SMA wire is a thermal actuator.</strong> Current heats it, it contracts, and it relaxes as it cools. Our cell is modelled from a real wire's datasheet (Dynalloy Flexinol, 150 µm), with a cooling time constant of 2.7 s. It also contracts and relaxes at different temperatures, so the same heating power can leave it at different forces depending on where it came from.</p>
+<p><strong>Slow, for this cell, is very slow.</strong> The paper's ρ = 0.15 means a reference that takes 113 s per cycle.</p>
+<p><strong>And the fixed curve doesn't exist.</strong> We fitted one anyway, the paper's way. Tracking error, as a percentage of full force, at ρ = 0.15:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Temperature gap between contracting and relaxing</th><th>PI</th><th>feed-forward</th><th>feed-forward + PI</th></tr></thead>
+<tbody>
+<tr><td>none</td><td>0.19</td><td>3.1</td><td>0.24</td></tr>
+<tr><td>±2 °C</td><td>0.41</td><td>9.4</td><td>0.45</td></tr>
+<tr><td>±10 °C (our estimate for this wire)</td><td>2.49</td><td>29.0</td><td>2.91</td></tr>
+</tbody></table></div>
+<p>Feed-forward alone is 29% wrong, and adding it to PI never improves on PI. Plain feedback does the job.</p>
+<p><img loading="lazy" src="sma.jpg" alt="Left: the fitted static map for the SMA cell with and without hysteresis; the hysteretic data forms a wide loop the fitted curve cannot follow. Centre: tracking a slow reference with four controllers. Right: RMS error against slowness for each controller."></p>
+
+<h2>02 / Building the paper's cell</h2>
+<p><strong>So we modelled a HASEL pouch.</strong> The paper and its supplement give the pouch equations: how the zipped length, the bulge angle and the stroke relate, and the force from the change in capacitance. We implemented them and checked the closed-form force against the numerical derivative of the capacitance; they agree.</p>
+<p><strong>What the paper doesn't give is numbers.</strong> The film material, the pouch count and the voltage are theirs. Every dimension is ours, picked as typical of published HASELs: 18 µm film, a 20 × 50 mm pouch, electrodes over half of it. So is every dynamic number: a 50 ms time constant, and a small hysteresis.</p>
+<p><strong>Then we sized both cells for the same job,</strong> 10 N at 10 mm of stroke:</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>SMA</th><th>HASEL</th></tr></thead>
+<tbody>
+<tr><td>Cells</td><td>7 × 5 wires</td><td>2 × 15 pouches</td></tr>
+<tr><td>Active length</td><td>250 mm</td><td>300 mm</td></tr>
+<tr><td>Drive</td><td>0.41 A, low voltage</td><td>8 kV, almost no current</td></tr>
+<tr><td>Time constant</td><td>2.7 s</td><td>50 ms (assumed)</td></tr>
+<tr><td>Power to hold</td><td>11.8 W</td><td>about 0 (leakage not modelled)</td></tr>
+<tr><td>Energy per stroke</td><td>11.8 J</td><td>0.39 J at most</td></tr>
+</tbody></table></div>
+<p>The SMA cell pays to hold: cut the current and it lets go. That cost shaped our whole design, down to rotating which cells carry the load so none stays hot. The HASEL is a capacitor, so holding is nearly free.</p>
+
+<h2>03 / On the HASEL cell, the paper's result comes back</h2>
+<p><strong>Same test, same assumed feedback path, ρ = 0.15.</strong> Tracking error, % of full output:</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>PI</th><th>feed-forward</th><th>feed-forward + PI</th></tr></thead>
+<tbody>
+<tr><td>SMA</td><td>2.5</td><td>29.0</td><td>2.9</td></tr>
+<tr><td>HASEL</td><td>4.5</td><td>6.0</td><td><strong>3.2</strong></td></tr>
+</tbody></table></div>
+<p>On the HASEL, the combination beats either part, which is the paper's ordering. The margin is smaller than theirs: PI alone is 1.4× worse than the combination here, and 3.2× worse on their rig. Their rig has voltage slew limits and clutch switching that our model doesn't.</p>
+<p><strong>Given the same reference in real seconds, the two cells aren't close.</strong> Best controller for each:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Reference period</th><th>SMA</th><th>HASEL</th></tr></thead>
+<tbody>
+<tr><td>113 s</td><td>2.5%</td><td>0.3%</td></tr>
+<tr><td>14 s</td><td>11.5%</td><td>0.7%</td></tr>
+<tr><td>3.4 s</td><td>24%</td><td>1.3%</td></tr>
+<tr><td>1 s</td><td>24%</td><td>3.2%</td></tr>
+</tbody></table></div>
+<p>At 3.4 s and faster, the SMA cell's output doesn't move at all. Its temperature swings inside the gap between contracting and relaxing, and 24% is the error of holding still.</p>
+<p><img loading="lazy" src="compare.jpg" alt="Left: fitted static maps for both cells; the HASEL data lies close to its curve, the SMA data forms a wide loop. Centre: the same reference tracked by both; the HASEL follows it and the SMA output is flat. Right: RMS error against reference period for both cells."></p>
+
+<h2>04 / Why it works on one and not the other</h2>
+<p><strong>We varied the two numbers we had assumed,</strong> the HASEL's time constant and the delay in the feedback path:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Muscle time constant</th><th>Feedback delay</th><th>PI</th><th>feed-forward + PI</th></tr></thead>
+<tbody>
+<tr><td>HASEL, 20 ms</td><td>100 ms</td><td>14.8</td><td>5.1</td></tr>
+<tr><td>HASEL, 50 ms</td><td>100 ms</td><td>4.5</td><td>3.2</td></tr>
+<tr><td>HASEL, 50 ms</td><td>10 ms</td><td>1.45</td><td>1.47</td></tr>
+<tr><td>SMA, 2.7 s</td><td>100 ms</td><td>2.5</td><td>2.9</td></tr>
+</tbody></table></div>
+<p><strong>Feed-forward earns its place when the muscle is faster than the loop watching it.</strong> A loop that sees the output late has to keep its gain low, so something else has to carry the motion, and the fitted curve does. Shorten the delay and feedback catches up; the curve stops mattering. The SMA cell is 27 times slower than the delay, so feedback always had time.</p>
+<p>The paper's result is about fast muscles on a comparatively slow loop. It says so in its own terms: the method is for muscles whose transients are fast next to the motion, and it names SMA as a candidate only if that is verified. For our wire, it isn't.</p>
+
+<h2>What this means for the muscle design</h2>
+<ul>
+<li><strong>The paper doesn't touch our hard problem.</strong> It drives its muscle with one number. Ours has one input per cell, and choosing which cells fire is the design. The authors list independent inputs as future work.</li>
+<li><strong>An SMA cell needs a model with memory.</strong> Its output depends on its temperature and on which way it got there. A fixed curve can't carry that, so per-cell control needs a thermal state for each cell, or a measurement of each cell.</li>
+<li><strong>A HASEL cell would remove the reasons for half our controller.</strong> No holding cost and no heat leaking between neighbours means no need to rotate the load. What it adds is 8 kV drive electronics and breakdown as a failure mode.</li>
+</ul>
+
+<h2>What isn't done</h2>
+<p><strong>The HASEL result rests on assumed numbers.</strong> The table above shows that the time constant and the delay decide the answer, and both are guesses. The paper's measured data is public; fitting our model to it is the next step. There is no dielectric breakdown or leakage in the model, and 8 kV across two 18 µm films is 222 V/µm. The SMA's temperature gap is our estimate, not a datasheet figure. Only a single muscle unit was tested for each cell, not an array. And none of it has touched hardware: these are predictions, marked as such until a measurement replaces them.</p>
+
+<h2>Who did what</h2>
+<p>We had the matrix-muscle idea, found the paper, and asked whether a version based on it would beat what we had. Claude read the paper and its supplement, implemented the recipe, built the HASEL model from the paper's equations, and ran the comparison. It also flagged, while building the test, that a first-order plant with a perfect sensor makes PI win trivially, and added the noise and delay that make the comparison mean something.</p>
+<p>Everything is open in <a href="https://github.com/punkfab/robot-actuators">punkfab/robot-actuators</a>, under <code>muscle/</code>. Choosing between actuator technologies for an assembly, and want the choice tested in simulation before anything is ordered? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
