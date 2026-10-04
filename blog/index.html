@@ -25,6 +25,11 @@
   <ul class="postlist">
     <li>
       <span class="date">2026-10-04</span>
+      <a class="title" href="/blog/pcbworld-evals/">Can a router finish a real board? 119 boards, scored</a>
+      <p>We ran circuit-skills' routers on PCBWorld's benchmark of real open-source boards: each one keeps its designer's placement, has its routing stripped, and every result is scored by KiCad DRC. They finished 78% of the small boards clean, 70% of the medium and 20% of the large, close to the paper's best-of-five Freerouting. Every unfinished board was 1 to 5 items from done. The benchmark also caught three bugs in our harness, and a wrong rule in our hand-finish-or-re-place diagnosis.</p>
+    </li>
+    <li>
+      <span class="date">2026-10-04</span>
       <a class="title" href="/blog/route-evals/">Can you one-shot a PCB? Four routers, one board</a>
       <p>We routed the same 4-layer RP2040 board with four automatic routers, scored every result with the same checks, and kept the scores. tscircuit's own autorouter, run directly on the KiCad board, connected every net with fab-sized vias; Freerouting left two nets open; the tscircuit export path got the connections but not the vias. None of the four produced a board you could order, and the harness is now part of the pcb-layout skill.</p>
     </li>

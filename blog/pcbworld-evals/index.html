@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Can a router finish a real board? 119 boards, scored — PUNKFAB log</title>
+<meta name="description" content="We ran circuit-skills' routers on PCBWorld's benchmark of real open-source boards: the designer's placement, the routing stripped, every result scored by KiCad DRC. They finished 78% of the small boards clean, 70% of the medium ones and 20% of the large ones, close to the paper's best-of-five Freerouting. Every board they did not finish was 1 to 5 items from done. Running it also found three bugs in our harness and a wrong rule in our own diagnosis." />
+<link rel="canonical" href="https://punkfab.com/blog/pcbworld-evals/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/pcbworld-evals/" />
+<meta property="og:title" content="Can a router finish a real board? 119 boards, scored" />
+<meta property="og:description" content="circuit-skills on PCBWorld's real-board benchmark: 0.78 clean on small boards, 0.70 on medium, 0.20 on large. Every unfinished board was 1 to 5 items from done, and the benchmark caught three harness bugs and a wrong diagnosis rule." />
+<meta property="og:image" content="https://punkfab.com/blog/pcbworld-evals/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/pcbworld-evals/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="Bar chart of clean-pass rates on PCBWorld D3-A and D3-B: designer's routing 1.00, circuit-skills best of backends 0.78 and 0.70, Freerouting 2.2.4 0.75 and 0.70, tscircuit capacity autorouter 0.22 and 0.00, and the paper's Freerouting 2.1.0, KiCadRoutingTools, PPO and GPT-5.4 agents." />
+<meta property="article:published_time" content="2026-10-04T23:00:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Can a router finish a real board? 119 boards, scored" />
+<meta name="twitter:description" content="circuit-skills on PCBWorld's real-board benchmark: 0.78 clean on small boards, 0.70 medium, 0.20 large. Every unfinished board was 1 to 5 items from done." />
+<meta name="twitter:image" content="https://punkfab.com/blog/pcbworld-evals/card.jpg" />
+<meta name="twitter:image:alt" content="Clean-pass bar chart: circuit-skills against the PCBWorld paper's baselines on two benchmark splits." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">pcb · routing · evals</p>
+  <h1>Can a router finish a real board? 119 boards, scored</h1>
+  <p class="meta">2026-10-04 · Dan Newcome</p>
+  <article class="post">
+<p><strong>In <a href="/blog/route-evals/">the last post</a> we scored four routers on one board and said one board is not a benchmark. Here is a benchmark.</strong> <a href="https://github.com/LGAI-Research/PCBWorld">PCBWorld</a>, from LG AI Research, takes real open-source boards, keeps every part where its designer put it, strips the routing, and asks a router to put it back. Our routing harness is built for exactly that job, so we ran it on the 119 test boards.</p>
+<ul>
+<li>On the 99 small boards, the best of our routers finished <strong>78%</strong> fully connected and with zero DRC errors.</li>
+<li>On the 10 medium boards it finished <strong>70%</strong>, and on the 10 large ones <strong>20%</strong>.</li>
+<li>That is close to the paper's strongest classical router, and ahead of its GPT-5.4 agents on both splits the paper reports.</li>
+</ul>
+<p>The more useful finding is about the boards we did not finish. Every one of them was <strong>1 to 5 items from done</strong>. Running the benchmark also found three bugs in our harness, and showed that the rule we shipped this morning for "hand-finish or re-place?" was wrong.</p>
+<p><img loading="lazy" src="scores.jpg" alt="Two bar charts of clean-pass rate. D3-A, 99 small boards: designer's routing 1.00, circuit-skills best of backends 0.78, Freerouting 2.2.4 0.75, tscircuit capacity autorouter 0.22, the paper's Freerouting 2.1.0 0.80, KiCadRoutingTools 0.74, PPO policy 0.86, GPT-5.4 agent 0.65, GPT-5.4-mini agent 0.28. D3-B, 10 medium boards: designer 1.00, circuit-skills 0.70, Freerouting 2.2.4 0.70, capacity autorouter 0.00, paper Freerouting 2.1.0 0.78, KiCadRoutingTools 0.20, PPO 0.45, GPT-5.4 agent 0.00, GPT-5.4-mini 0.00."></p>
+
+<h2>01 / The benchmark</h2>
+<p>PCBWorld (<a href="https://arxiv.org/abs/2607.05915">arXiv:2607.05915</a>, KDD 2026 workshop) wraps KiCad's interactive router as an environment for reinforcement-learning and LLM agents. Its real-board set, D3, is 678 boards from the <a href="https://github.com/PCBench/PCBench">PCBench</a> collection of open-source KiCad projects: breakouts, badges, chargers, USB hubs, motor controllers. They are split into three tiers by size:</p>
+<ul>
+<li><strong>D3-A:</strong> small boards, up to 13 nets. 99 test boards.</li>
+<li><strong>D3-B:</strong> medium boards, up to 42 nets. 10 test boards.</li>
+<li><strong>D3-C:</strong> large boards, up to 451 nets and 2,103 pads. 10 test boards.</li>
+</ul>
+<p>The headline metric is <strong>clean pass</strong>: the board comes back fully connected <em>and</em> with zero error-level KiCad DRC violations under its own design rules. The paper calls that the closest proxy for "ready to fabricate", and it is the right bar. Partial credit hides dead boards.</p>
+<p>The authors publish everything needed to rebuild the board set from PCBench, without redistributing anyone's boards. Their preparation chain ran unchanged on a stock KiCad 9.0.8 and produced the same 679 boards as the paper. Credit to them for a benchmark that is this easy to reproduce.</p>
+
+<h2>02 / How we ran it</h2>
+<p>Every board goes through <code>route_eval</code>, the harness from the last post. Three backends run on each one:</p>
+<ul>
+<li><strong>Freerouting 2.2.4</strong>, through KiCad's own Specctra export and import, so it works on any KiCad board.</li>
+<li><strong>tscircuit's capacity autorouter</strong>, on the outer layers and on all layers. This is the router inside tscircuit, which we run directly on the KiCad board.</li>
+</ul>
+<p>Each result is scored with KiCad DRC under the board's own project rules, the way the paper scores its baselines. The best candidate per board is kept: clean first, then the most connected, then the fewest violations. That is our counterpart to the paper keeping the best of five attempts. The designer's own routing is scored the same way, as a check on the scorer.</p>
+<p>A few differences from the paper's protocol matter when comparing numbers:</p>
+<ul>
+<li>We ran each backend <strong>once</strong>; the paper keeps the best of five and averages Freerouting over four seeds.</li>
+<li>We used Freerouting 2.2.4; the paper used 2.1.0.</li>
+<li>Our DRC is stock KiCad's; theirs is their engine's build of the same version, with the same rules.</li>
+</ul>
+
+<h2>03 / Results</h2>
+<div class="table-wrap"><table>
+<tr><th>Split</th><th>circuit-skills, best of</th><th>Freerouting 2.2.4</th><th>Capacity autorouter</th><th>Paper: Freerouting 2.1.0</th><th>Paper: PPO</th><th>Paper: GPT-5.4 agent</th></tr>
+<tr><td>D3-A, 99 small</td><td><strong>0.78</strong></td><td>0.75</td><td>0.22</td><td>0.80</td><td>0.86</td><td>0.65</td></tr>
+<tr><td>D3-B, 10 medium</td><td><strong>0.70</strong></td><td>0.70</td><td>0.00</td><td>0.78</td><td>0.45</td><td>0.00</td></tr>
+<tr><td>D3-C, 10 large</td><td><strong>0.20</strong></td><td>0.20</td><td>0.00</td><td>–</td><td>–</td><td>–</td></tr>
+</table></div>
+<p>Clean-pass rate per split. The paper does not report D3-C in its main table. One D3-C board is incomplete even as its designer left it, with 88 connections open in the original routing, so the designer's row there is 0.90, not 1.00.</p>
+<p><strong>A trained policy still wins on small boards; a classical router wins on medium ones.</strong> The paper's PPO policy gets 0.86 on D3-A, and up to 0.94 in one variant. It drops to 0.45 on D3-B, where Freerouting holds at about three in four. The GPT-5.4 agents, which route by calling KiCad step by step, take about four minutes per small board. They reach 0.65 on D3-A and 0.00 on D3-B. Our whole pass takes about 7 seconds per small board.</p>
+<p><strong>Large boards are where it falls apart:</strong> 2 of 10 clean. The test boards in this tier have 27 to 79 signal nets and up to 210 connections each; one-shot routing is not there yet.</p>
+
+<h2>04 / How the routers fail</h2>
+<p><img loading="lazy" src="boards.jpg" alt="One USB hub board drawn three times with the same placement. Left, the designer's routing, clean. Middle, Freerouting 2.2.4: tidy routing, but four dashed orange lines mark connections it left open, near the header on the left and a connector on the right; zero DRC errors. Right, the tscircuit capacity autorouter: everything connected, but clusters of magenta rings mark 78 DRC violations around the header and along the bottom row of parts."></p>
+<p>The two routers fail in opposite ways, and the pattern held across all 119 boards:</p>
+<ul>
+<li><strong>Freerouting is fab-clean but stops short.</strong> It gives up within seconds (3 to 22 here) with a few nets unrouted and zero DRC errors. It produced 67 of the 77 clean small boards and every clean medium and large one.</li>
+<li><strong>The capacity autorouter connects everything but crowds.</strong> It reaches 98–100% connectivity on the outer layers, but leaves clearance violations and the occasional short where it squeezes between pads. It produced 10 clean small boards that Freerouting did not finish, which is why we keep both.</li>
+</ul>
+<p>So the useful question is how close the nearest candidate is, not which router won. On every board we did not finish, the closest candidate was <strong>1 to 5 items from done</strong>. Usually that candidate was Freerouting's, with a few open nets and nothing else. That is a short hand-finishing job, not a redesign.</p>
+
+<h2>05 / The benchmark tested us first</h2>
+<p>The first full run scored 0.75 on D3-A. Reading why boards failed turned up three bugs in our harness, not the routers:</p>
+<ul>
+<li><strong>Freerouting 2.2.4 splits its file arguments on spaces.</strong> Five boards live in folders like <code>Cherry Mx Bitboard</code>, and Freerouting tried to open <code>Cherry</code>. The same bug would hit any of our own projects with a space in the path. It now routes in a scratch folder with no spaces in the path.</li>
+<li><strong>Our capacity-autorouter bridge let traces narrow below the board's own minimum width.</strong> It allowed 0.15 mm on boards that require 0.254 mm, and it ignored per-net width classes such as wider power nets. That accounted for most of its failures. Now it never goes below the board's minimum, and each net gets its class width: 0.14 → 0.22 clean on D3-A, with DRC errors per board down from 58 to 10.</li>
+<li><strong>Round boards.</strong> A board outline drawn as a single circle was read as two corners of a rectangle, so one board's routing area collapsed to a sliver.</li>
+</ul>
+<p>The second run is the one in the table. The first is kept in the repository as the record of what it caught.</p>
+
+<h2>06 / Hand-finish or re-place: we were wrong</h2>
+<p>Earlier today we shipped a placement score. It estimates how congested a placement is before any router runs. Alongside it went a rule that reads a routing run and recommends one of three things: order the board, hand-finish it, or re-place parts. D3 is the first real test of that rule, because every board in it has a known answer: <strong>its designer routed it cleanly with this exact placement.</strong> Whatever the routers did, "re-place" is never the right call here.</p>
+<p>The rule said "re-place" on 23 of these boards. It was judging the top-ranked candidate, usually the capacity autorouter's fully connected board with dozens of clearance hits in the crowded areas. It ignored Freerouting's candidate, which was 2 open nets from done. It also let a crowded region overrule a short finishing job.</p>
+<p>The fixed rule judges the candidate closest to done. Within ten items it says "hand-finish", and names any crowded parts as a warning rather than a veto. On all 119 boards it now never says "re-place". All 33 unfinished boards read "hand-finish". 85 of the 86 clean boards read "order-ready"; the last one has a fab-rule item that our checks flag and PCBWorld's scoring does not. On our own einhander keypad it now says to hand-finish Freerouting's two open nets and watch the USB connector and the RP2040. That is how the board was actually shipped.</p>
+<p><strong>The placement score itself predicts less than we hoped.</strong> On designer-placed boards it barely separates the boards a router finishes from the ones it doesn't. The best single signal is how many ratsnest lines cross, and it gets that ordering right about two times in three. It is good at finding where on a board the trouble is. It is not good at deciding whether a professional's placement is routable, because nearly all of them are. Where it should matter is on placements generated by code, like ours. The next experiment is to score our generated placements against these 678 designer placements and see where ours fall.</p>
+
+<h2>07 / So, can you one-shot a board?</h2>
+<p>For a small or medium board with a sensible placement: about three times in four, a router finishes it clean in seconds. When it doesn't, the best candidate is usually a few nets from done, a few minutes of hand-finishing. For large boards, not yet. And the fastest way to move these numbers turned out to be testing our own harness against someone else's benchmark.</p>
+<p>Everything is in the <code>pcb-layout</code> skill at <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>. That includes the benchmark runner (<code>evals/pcbworld/run_d3.py</code>), the per-board results for every run, and the instructions for building the board set with a stock KiCad. Thanks to the PCBWorld authors for a benchmark that ran on our machine the first time. Have a board that needs routing, or one stuck a few nets from done? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
