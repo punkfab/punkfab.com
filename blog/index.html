@@ -25,6 +25,11 @@
   <ul class="postlist">
     <li>
       <span class="date">2026-10-04</span>
+      <a class="title" href="/blog/route-evals/">Can you one-shot a PCB? Four routers, one board</a>
+      <p>We routed the same 4-layer RP2040 board with four automatic routers, scored every result with the same checks, and kept the scores. tscircuit's own autorouter, run directly on the KiCad board, connected every net with fab-sized vias; Freerouting left two nets open; the tscircuit export path got the connections but not the vias. None of the four produced a board you could order, and the harness is now part of the pcb-layout skill.</p>
+    </li>
+    <li>
+      <span class="date">2026-10-04</span>
       <a class="title" href="/blog/circuit-skills-plugins/">circuit-skills in ChatGPT and Claude: a board viewer that runs the checks</a>
       <p>Our code-driven PCB skills now ship as a Codex plugin for the ChatGPT desktop app and as a Claude Code mod. Both put the routed board in the conversation with every DRC marker on it, and give the agent the same checks the pipeline gates on: DRC triage, fab rules, floating pads, and a new critical-routing gate. How to install each, how they work, and what two agents in two different apps each contributed.</p>
     </li>
