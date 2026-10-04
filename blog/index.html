@@ -24,6 +24,11 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
+      <span class="date">2026-10-03</span>
+      <a class="title" href="/blog/artnode-redrive/">Re-driving ArtNode: four layers, a repaired power path, and a checker fix</a>
+      <p>A fresh four-layer ArtNode layout reaches zero KiCad violations and zero open connections. The re-drive repairs the USB/battery power path, adds FastRoute to circuit-skills, and catches a coordinate bug behind seven false hole-spacing errors. Current limits, signal integrity and thermal review remain open before fabrication.</p>
+    </li>
+    <li>
       <span class="date">2026-10-01</span>
       <a class="title" href="/blog/einhander-reroute/">Re-routing einhander: the tail we hand-patched was an export bug</a>
       <p>We re-ran our code-driven PCB pipeline on einhander, a 4-layer RP2040 USB-MIDI board, with nobody touching it, and put it next to the board we shipped in July. The shorts we had blamed on the autorouter came from the export: three top-side capacitors were described to the router as mirrored bottom-side parts. Fixed, the unattended run has no shorts and two open nets, and our own DRC check turned out to call open nets clean.</p>
