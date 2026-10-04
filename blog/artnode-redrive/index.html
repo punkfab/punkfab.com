@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Re-driving ArtNode: four layers, a repaired power path, and a checker fix — PUNKFAB log</title>
+<meta name="description" content="A fresh four-layer ArtNode layout reaches zero KiCad violations and zero open connections. The re-drive also repairs the power path, adds FastRoute to circuit-skills, and catches a coordinate bug in our hole-spacing check. Electrical and thermal review remain open." />
+<link rel="canonical" href="https://punkfab.com/blog/artnode-redrive/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/artnode-redrive/" />
+<meta property="og:title" content="Re-driving ArtNode: four layers, a repaired power path, and a checker fix" />
+<meta property="og:description" content="A fresh four-layer ArtNode layout reaches zero KiCad violations and zero open connections. The re-drive also repairs the power path, adds FastRoute to circuit-skills, and catches a coordinate bug in our hole-spacing check. Electrical and thermal review remain open." />
+<meta property="og:image" content="https://punkfab.com/blog/artnode-redrive/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/artnode-redrive/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="Top copper view of the revised 100 by 70 mm ArtNode board, with its USB and battery power circuitry, controller, Ethernet connector and four LED outputs." />
+<meta property="article:published_time" content="2026-10-03T18:00:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Re-driving ArtNode: four layers, a repaired power path, and a checker fix" />
+<meta name="twitter:description" content="A fresh four-layer ArtNode layout reaches zero KiCad violations and zero open connections. The re-drive also repairs the power path, adds FastRoute to circuit-skills, and catches a coordinate bug in our hole-spacing check. Electrical and thermal review remain open." />
+<meta name="twitter:image" content="https://punkfab.com/blog/artnode-redrive/card.jpg" />
+<meta name="twitter:image:alt" content="Top copper view of the revised 100 by 70 mm ArtNode board, with its USB and battery power circuitry, controller, Ethernet connector and four LED outputs." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">pcb · routing · build notes</p>
+  <h1>Re-driving ArtNode: four layers, a repaired power path, and a checker fix</h1>
+  <p class="meta">2026-10-03 · Dan Newcome</p>
+  <article class="post">
+
+<p><strong>ArtNode got a fresh checkout and a new four-layer layout, keeping its 100 × 70 mm outline and connector placement anchors.</strong> The aim was a fully connected board with clean design-rule checks. The route now has zero KiCad violations and zero unconnected items. Getting there also meant correcting the circuit, rebuilding the power path, and finding a bug in our own fabrication checker.</p>
+<p>This is a routed revision with engineering review still open. It has not been manufactured or tested on a bench. The distinction matters here: a checker can prove that copper connects the assigned nets and clears nearby objects; it cannot prove that the board will run cool, power a load safely, or carry Ethernet reliably.</p>
+<p><img src="front.png" alt="Top copper and silkscreen of the revised ArtNode board: power circuitry on the left, the controller in the middle, Ethernet at the right edge and four LED outputs along the bottom."></p>
+<p><em>The current candidate, showing top copper and silkscreen. Routing also uses the back and both inner copper layers. The board still carries a placement-draft label.</em></p>
+
+<h2>01 / The constraints we kept</h2>
+<p><strong>The mechanical envelope stayed fixed.</strong> The original hardware files remain unchanged in the checkout; the re-drive lives in a separate layout directory. It keeps the connector set and placement anchors, with one necessary footprint replacement: the inherited USB4125 receptacle had no USB data contacts, so the new board uses a data-capable USB4105 footprint.</p>
+<p>Despite the repository's <code>2040-artnode</code> name, this revision uses an RP2354A controller, alongside a W5500 Ethernet interface and four buffered LED data outputs. Its source is Python: SKiDL generates the circuit and netlist, a JSON placement file locates the parts, and KiCad's <code>pcbnew</code> builds the board. This project does not use the TSX generator from our <a href="/blog/einhander-reroute/">einhander rerouting experiment</a>.</p>
+<p>The circuit pass corrected the boost inductor and diode topology, charger indicator, crystal pad maps, W5500 supply and strap connections, and AHCT125 enable pins. SKiDL's electrical-rule check reports no errors or warnings. Netlist generation still emits missing-tag warnings; those are a separate report, and the exported pin connections and values were checked against the native board.</p>
+
+<h2>02 / One amp for testing changes the power design</h2>
+<p><strong>The LED power requirement is 1 A total across all four outputs.</strong> That is for testing a small number of pixels. Larger installations will use their own LED supplies, sharing ground and data with the controller without tying the two 5 V supplies together.</p>
+<p>Even that modest output requirement makes the battery-side current substantial. The boost stress model puts input current around 2.7 A at a 3 V battery when supplying a 1.3 A load at 5 V, including a controller allowance. That is a model result, not a measured operating point, but it is enough to reject the earlier 22 µH inductor and 1 A rectifier for this job.</p>
+<p>The revision uses a 4.7 µH Coilcraft XAL5030 inductor, a 3 A rectifier, larger 47 µF input and output capacitors, and an inner-layer 5 V pour. The 3.3 V regulator is now a TLV1117LV33DCYR, specified for ceramic-capacitor stability, with copper on both sides and vias to spread heat. Effective capacitance under DC bias and actual regulator temperature still need verification.</p>
+<p>We also added USB/battery load sharing. USB feeds <code>SYS_IN</code> through a diode; a PMOS selects the battery when USB is absent. The boost converter takes its input from that system rail, with local input capacitance, while the charger's battery output has its own filter. Twelve generic DC simulation cases exercise source selection. They do not qualify charger termination, transients, or the real components' thermal behavior.</p>
+<p>The input limits remain an open design constraint. The retained battery connector is rated below the model's worst-case full-load input current. And USB-C pull-down resistors alone do not establish permission to draw 3 A from a source. Battery operating limits and USB source-current handling must be resolved before this board is ready to build.</p>
+
+<h2>03 / Routing and local finishing</h2>
+<p><strong>Four layers gave us more routing room, but completing the board still took local finishing.</strong> The circuit-skills work adds <a href="https://fastroute.baltavista.com/">FastRoute</a> as an alternative to Freerouting, alongside the existing export, import and checking workflow. On this revision, USB power, MISO and several final escapes were finished locally after FastRoute. This was not a fully unattended autorouter result.</p>
+<p>We revisited critical placement as well. On an earlier four-layer candidate, the RP2354 regulator's LX connection ran 5.52 mm and crossed two vias. Moving its inductor brought that connection down to about 2.23 mm, entirely on the front layer. That is a concrete improvement to the switch-node geometry; it is not a substitute for reviewing the regulator's whole layout against the hardware guide.</p>
+<p>The viewer work belongs in the same loop. A fresh check report was appearing while an older side-panel board image remained cached, so the chat viewer and plugin tab could show different revisions. The live-update patch adds geometry refresh and routing progress while preserving the chosen layers and zoom. A previously opened viewer still needs the updated runtime and current board loaded; refreshing only the check results does not refresh copper.</p>
+
+<h2>04 / Seven hole-spacing errors came from our coordinate math</h2>
+<p><strong>The fabrication checker reported vias colliding with connector holes that were not at those coordinates.</strong> It found seven actionable inter-part gaps below 0.5 mm, some negative, around the USB and Ethernet connectors. A negative gap is serious if the two holes really overlap.</p>
+<p>Here, the helper had transformed rotated footprint pads with the wrong rotation sign. It placed the holes on the wrong side of the footprint before measuring their distance to nearby vias. Comparing those coordinates with KiCad's actual pad positions exposed the error. The fix uses KiCad's rotation convention consistently in the hole-spacing, floating-pad and keepout helpers.</p>
+<p>With the corrected checker installed, the seven inter-part failures disappear. The two 0.340 mm gaps inside the USB connector's own footprint remain informational. That is a distinction between a component's hole pattern and a via placed too close to another part, not a blanket approval from a fabricator.</p>
+<p>The router option, live-update work and coordinate correction are in the merged <a href="https://github.com/punkfab/circuit-skills/pull/1">circuit-skills upstream patch</a>. The reusable fix is in the checker; the board did not need seven arbitrary via moves to accommodate imaginary holes.</p>
+
+<h2>05 / The current routed candidate</h2>
+<div class="table-wrap"><table>
+<tr><th>Check or measurement</th><th>Current revision</th></tr>
+<tr><td>Board outline / copper layers</td><td>100 × 70 mm / 4</td></tr>
+<tr><td>Footprints / nets</td><td>96 (including 4 mounting holes) / 59</td></tr>
+<tr><td>KiCad violations</td><td><strong>0</strong></td></tr>
+<tr><td>Unconnected items</td><td><strong>0</strong></td></tr>
+<tr><td>Track length / segments</td><td>2094.4 mm / 2032</td></tr>
+<tr><td>Vias / total drilled holes</td><td>140 / 187</td></tr>
+<tr><td>Inter-part hole gap ≥ 0.5 mm</td><td>Pass, corrected checker</td></tr>
+<tr><td>Via drill ≥ 0.3 mm / annular ring ≥ 0.13 mm</td><td>Pass</td></tr>
+<tr><td>Surface-mount pads reached on their own layer or through a via</td><td>290 / 290</td></tr>
+</table></div>
+<p>The checks establish a connected, geometrically clean candidate under the configured rules. They also gave us a useful failure case for the tools: a clean native board can be falsely rejected by a coordinate bug, while a stale viewer can make a routed board look unrouted. Both the report and the image need to refer to the board being reviewed.</p>
+
+<h2>06 / What still needs engineering review</h2>
+<p><strong>The next gate is the circuit's behavior in its physical layout.</strong> Crystal placement needs a proximity review. USB and Ethernet pairs need a routing, reference-plane and stackup review; tracks on the inner layers mean their use as reference planes cannot be assumed. The power path still needs a complete source-current budget, protected-battery limits, capacitor DC-bias checks and thermal verification.</p>
+<p>We have a finished route, a repaired power path, and stricter tools that now agree about the geometry. We do not yet have a fabrication release. The original project is at <a href="https://github.com/pixeldestrukt/2040-artnode">pixeldestrukt/2040-artnode</a>; the reusable routing and checking work lives in <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>. Have a board you want to take through the same process? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
