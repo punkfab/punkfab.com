@@ -6,7 +6,7 @@
 <title>One feature tree, several CAD systems — PUNKFAB log</title>
 <meta name="description" content="We published the featuretree IR: a small JSON format for CAD feature trees that FreeCAD, build123d and Onshape rebuild natively, checked the same way in each. What the measurements show, and what running the backends against each other found." />
 <meta property="og:title" content="One feature tree, several CAD systems" />
-<meta property="og:description" content="The featuretree IR spec, emitted natively into FreeCAD, build123d and Onshape and checked by re-reading. FreeCAD matches the reference on 10 of 11 NIST parts; cross-backend runs found six defects, one in the reference." />
+<meta property="og:description" content="The featuretree IR spec, emitted natively into FreeCAD, build123d and Onshape and checked by re-reading. FreeCAD matches the reference on 10 of 11 NIST parts; 43 of 46 edits made in FreeCAD read back correctly; the format covers about half of what designers used." />
 <meta property="og:type" content="article" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,55 +22,136 @@
 <main>
   <p class="eyebrow">paper · featuretree</p>
   <h1>One feature tree, several CAD systems</h1>
-  <p class="meta">2026-09-29 · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · paper <a href="https://doi.org/10.5281/zenodo.23049388">10.5281/zenodo.23049388</a></p>
+  <p class="meta">2026-09-29, updated 2026-10-05 · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · paper <a href="https://doi.org/10.5281/zenodo.23049387">10.5281/zenodo.23049387</a></p>
   <article class="post">
 
-<p>A STEP file carries a part's shape but not how it was built. A native CAD file carries the history, but only its own vendor can read it. <a href="/blog/featuretree/">featuretree</a> keeps a small format in between. We've now written that format up as a specification, with measurements of how well each CAD system rebuilds it.</p>
+<p>A STEP file carries a part's shape but not how it was built. A native CAD file carries the history, but only its own vendor can read it. <a href="/blog/featuretree/">featuretree</a> keeps a small format in between. We've written that format up as a specification, with measurements of how well each CAD system rebuilds it.</p>
 
-<p>The paper is <a href="https://doi.org/10.5281/zenodo.23049388">on Zenodo</a>. This post is the short version.</p>
+<p>The paper is <a href="https://doi.org/10.5281/zenodo.23049387">on Zenodo</a>. This post covers the same ground with less formality.</p>
+
+<h2>Why a format at all</h2>
+<p>More and more parts are written by programs and by language-model agents. Most of that output is either bare geometry or code for one CAD kernel. Neither is much use to the person who has to review the part. They want to open it in the CAD system they already know, see the steps it was built from, change one dimension, and hand it back.</p>
+
+<p>Every history-based CAD system already shows that list of steps. FreeCAD calls it the model tree, Onshape the feature list, Fusion the timeline, SolidWorks the FeatureManager tree. The names differ and the files are incompatible, but the idea is the same. Our format is that list with the vendor taken out: something an agent can write, each CAD system can rebuild as its own native features, and an edit made in any of them can be read back into.</p>
+
+<p>Which features belong in such a list is an old question. People have been cataloguing CAD features since the 1980s and nobody has a complete set. We haven't tried to produce one. We picked a small subset, measured how far it gets, and wrote down the rule for adding to it.</p>
 
 <h2>The format</h2>
-<p>A part is a JSON list of named features: sketches (with arcs), pad, pocket, fillet, revolve and placed cuts, with draft. Features refer to faces and edges by <em>query</em>, such as "the top face" or "the largest circle on top". They never use a CAD kernel's internal ids, so each system re-finds the geometry every time it rebuilds. A validator, <code>ir.validate()</code>, checks the rules every backend is allowed to assume.</p>
+<p>A part is a JSON list of named features, in the order they're built. There are seven kinds: sketches (lines, arcs, circles), pad, pocket, fillet, revolve, and two kinds of placed cut, with draft angles on the extrusions.</p>
 
-<pre><code>{"kind": "sketch", "name": "recess_sk", "on": {"face_of": "body", "side": "top"}, "circles": [[0, 0, 6]]},
-{"kind": "pocket", "name": "recess", "sketch": "recess_sk", "through": false, "length": 4}</code></pre>
+<pre><code>{"name": "plate", "features": [
+  {"kind": "sketch", "name": "outline", "plane": "XY",
+   "polys": [[[-20,-15],[20,-15,0.4142],[20,15],[-20,15]]]},
+  {"kind": "pad", "name": "body", "sketch": "outline", "length": 10},
+  {"kind": "sketch", "name": "recess_sk",
+   "on": {"face_of": "body", "side": "top"}, "circles": [[0, 0, 6]]},
+  {"kind": "pocket", "name": "recess", "sketch": "recess_sk",
+   "through": false, "length": 4},
+  {"kind": "fillet", "name": "round", "radius": 1,
+   "select": {"circles": "top_outer"}}]}</code></pre>
 
-<h2>Where it goes</h2>
+<p>Two decisions matter most.</p>
+<ul>
+<li><strong>Features refer to geometry by query, never by id.</strong> The recess is sketched on "the top face of body", and the fillet goes on "the largest circle on top". Each CAD system finds that face or edge again every time it rebuilds. A CAD kernel's internal ids change when the part changes, which is why files that store them break.</li>
+<li><strong>It is data, not code.</strong> There's nothing to execute, so a program can check it before anything is built. A validator, <code>ir.validate()</code>, checks the rules every backend is allowed to assume.</li>
+</ul>
+
+<h2>What each feature becomes</h2>
 <div class="table-wrap"><table>
-<thead><tr><th>System</th><th>How</th><th>Status</th></tr></thead>
+<thead><tr><th>In the format</th><th>FreeCAD</th><th>Onshape</th><th>Fusion, SolidWorks</th><th>Reads back</th></tr></thead>
 <tbody>
-<tr><td>build123d</td><td>Python, in-process</td><td>the reference</td></tr>
-<tr><td>FreeCAD</td><td>native PartDesign tree, headless</td><td>measured</td></tr>
-<tr><td>Onshape</td><td>native Part Studio over REST, every reference a FeatureScript query</td><td>measured</td></tr>
-<tr><td>Fusion, SolidWorks</td><td>generated scripts that run inside the program</td><td>written, not yet run</td></tr>
+<tr><td>sketch</td><td>Sketch</td><td>Sketch</td><td>Sketch</td><td>circle radii</td></tr>
+<tr><td>pad</td><td>Pad</td><td>Extrude (add)</td><td>Extrude (join), Boss-Extrude</td><td>length</td></tr>
+<tr><td>pocket</td><td>Pocket</td><td>Extrude (remove)</td><td>Extrude (cut), Cut-Extrude</td><td>length</td></tr>
+<tr><td>fillet</td><td>Fillet</td><td>Fillet</td><td>Fillet</td><td>radius</td></tr>
+<tr><td>revolve</td><td>Revolution</td><td>Revolve</td><td>Revolve</td><td>angle</td></tr>
+<tr><td>placed cut</td><td>plane, sketch, Pocket</td><td>plane, sketch, Extrude (remove)</td><td>plane, sketch, cut</td><td>depth</td></tr>
 </tbody></table></div>
 
-<p>Every system is checked the same way. The part is exported to STEP and compared with the reference build, by volume and by overlap (IoU). Each backend also records the volume after every feature, so when two backends disagree we can see which feature caused it.</p>
+<p>Each feature keeps its name in the target's tree. That name is the only thing used to match an edit on the way back.</p>
+
+<p>FreeCAD and Onshape are driven from outside and we've measured both. build123d, a Python CAD library, is the reference that everything else is compared with. Fusion and SolidWorks can only be scripted from inside the program, so for those we generate a script. <strong>Those two scripts have not been run yet</strong>, and we report no results for them.</p>
+
+<p>We also looked for a way to write a SolidWorks file without owning SolidWorks. The open-source library we use to read SolidWorks files lists them as something it can write too. In practice its writer declines even a plain box, and none of its forks change that. So the open route reads SolidWorks files but can't write them yet.</p>
+
+<h2>How we check</h2>
+<p>Every system is checked the same way. The part is exported to STEP and compared with the reference build, by volume and by overlap (IoU). It passes at 99.5% overlap and volume within 0.5%. Each backend also records the volume after every feature, so when two of them disagree we can see which feature caused it.</p>
 
 <h2>Results</h2>
-<p><strong>FreeCAD matches the reference on 10 of the 11 NIST test parts.</strong> The eleventh breaks one of the specification's rules, described below. <strong>Onshape matched every feature of our coverage parts to three decimals</strong>, apart from one pocket that removed 4.175 mm³ too much. We haven't explained that yet.</p>
+<p>The test set is the eleven parts of NIST's CAD test suite, as feature trees of 2 to 144 features that featuretree recovered from the STEP files.</p>
+<ul>
+<li><strong>FreeCAD matches the reference on 10 of the 11.</strong> The eleventh breaks one of the format's rules, described below.</li>
+<li><strong>Onshape has run on 3 and passes 1.</strong> On the second it built 53 of 54 features and landed just under the bar. On the third, the largest, it built 93 of 144 and the result is far off; ten stacked pads fail there and we don't yet know why. The other eight haven't run. Onshape's free plan allows about 1,500 API calls a day, and our emitter uses several per feature, so the largest part took a whole day's allowance.</li>
+<li><strong>On small parts written to exercise each feature, Onshape matched to three decimals</strong>, apart from one pocket that removed 4.175&nbsp;mm³ too much. We haven't explained that either.</li>
+</ul>
 
-<p>Onshape's run on the NIST parts stopped after two, when the free plan's daily API quota ran out. One of the two passed; the other built 53 of 54 features. We'll add the other nine in a revision.</p>
+<h2>Changing a dimension and getting it back</h2>
+<p>This is the loop the format is for, so we measured it. On ten parts we took up to six dimensions each, 46 in all. One at a time, we set a dimension to 1.1 times its value in the FreeCAD file, as someone would in the GUI. Then we read every parameter back into the format and rebuilt the part from the format with the reference.</p>
+
+<p><strong>43 of 46 edits came back correctly.</strong> The first time we ran it, only 27 did. In 16 cases the edit never arrived: FreeCAD stores a placed cut as a Pocket and reports its depth as "length", our reader was looking for "depth", and the change was dropped without any error. The rebuilt part was simply the old part. That bug had been there since we first wrote the round trip. It's fixed now.</p>
+
+<p>The three that still fail are all changes to the height of a part's base. In two, FreeCAD's rebuilt solid is invalid. In one, neither system produces a solid. We think it's because the recovered trees place later cuts at fixed coordinates instead of relative to the base, but we haven't confirmed that.</p>
+
+<p>Only dimensions make the trip. If someone adds, deletes or reorders a feature in the CAD system, we don't read that back yet.</p>
+
+<h2>How much of a designer's vocabulary this covers</h2>
+<p>NIST also publishes the same parts as native SolidWorks files, with the original designers' feature trees inside. We counted the features they used: 240 across the eleven parts.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Designer's feature</th><th>Count</th><th>In our format</th></tr></thead>
+<tbody>
+<tr><td>extrude</td><td>85</td><td>its own kind</td></tr>
+<tr><td>hole</td><td>63</td><td>shape only, as a cut</td></tr>
+<tr><td>fillet</td><td>37</td><td>its own kind</td></tr>
+<tr><td>pattern</td><td>27</td><td>shape only, one cut per instance</td></tr>
+<tr><td>draft</td><td>11</td><td>shape only, as a taper</td></tr>
+<tr><td>chamfer</td><td>10</td><td>shape only, as a cut</td></tr>
+<tr><td>revolve</td><td>4</td><td>its own kind</td></tr>
+<tr><td>shell, rib, combine</td><td>3</td><td>shape only, or nothing</td></tr>
+</tbody></table></div>
+
+<p><strong>About half (126 of 240) have a kind of their own.</strong> For most of the rest we can hold the shape but not the meaning. A designer's single "pattern of twelve holes with a counterbore" arrives as twelve separate cuts. The geometry is right, but nobody can change twelve to sixteen by editing one number.</p>
+
+<p>That table is also the to-do list. Hole, pattern and chamfer account for 100 of the 114 features without a kind. Adding those three would take coverage from 52% to 94% on these parts. Eleven parts from one test suite is a small sample, so we hold those percentages loosely.</p>
+
+<h2>The rule for adding a feature</h2>
+<p>Several of the bugs below came from a feature whose meaning we hadn't pinned down. So a new kind goes in only when:</p>
+<ul>
+<li>its meaning is written down without reference to any one CAD kernel, including every sign and direction;</li>
+<li>the validator checks what a backend may assume about it;</li>
+<li>the reference builds it, and a second system on a different kernel agrees at that feature;</li>
+<li>there's a native feature of the same meaning in each target, or we say plainly that there isn't;</li>
+<li>its dimensions survive the edit round trip.</li>
+</ul>
 
 <h2>What running them against each other found</h2>
 <p>No single backend reported any of these problems. Comparing backends found six:</p>
 <ul>
-<li><strong>The reference itself was wrong.</strong> A pad from a bottom face at z = 0 grew upward into the part. It's fixed, and none of our published results change.</li>
+<li><strong>The reference itself was wrong.</strong> A pad from a bottom face at z = 0 grew upward into the part. Onshape disagreed on the first such feature. It's fixed, and none of our published results change.</li>
 <li><strong>FreeCAD kept one solid.</strong> A sketch with several separate outlines padded only one of them, halving the part.</li>
-<li><strong>Two rules the spec had never stated.</strong> Loops in one sketch must not touch. An arc with a near-zero bulge is a straight line.</li>
-<li><strong>Onshape's draft direction was opposite to our first guess.</strong> Its failure behaviour also differs: a cut that removes nothing is an error there and silently does nothing elsewhere.</li>
+<li><strong>Loops in one sketch must not touch.</strong> The format had never said so. One system accepted touching loops and another rejected them.</li>
+<li><strong>A nearly flat arc is a straight line.</strong> One part had arcs with a radius of about two kilometres, and FreeCAD's sketch solver failed on them.</li>
+<li><strong>Onshape's draft direction was opposite to our first guess.</strong> A tapered boss grew where it should have shrunk.</li>
+<li><strong>Failure behaviour differs.</strong> A cut that removes nothing is an error in Onshape and silently does nothing elsewhere.</li>
 </ul>
 
 <h2>Reading native files back</h2>
-<p>NIST publishes the same test parts as native SolidWorks files. We decoded each one to STEP with Onshape's importer and with an open-source decoder, and compared both with NIST's own STEP. Onshape matched on all 11. The open decoder matched on 1, and four of its wrong parts passed its own checks. <strong>One decoder is not enough.</strong> We now take geometry from the commercial importer and the feature history from the open one, and we've <a href="https://github.com/cadmpeg/cadmpeg/issues/170">reported the failures upstream</a>.</p>
+<p>We decoded each of NIST's SolidWorks files to STEP twice, with Onshape's importer and with the open-source decoder, and compared both with NIST's own STEP. Onshape matched on all 11. The open decoder matched on 1, and four of its wrong parts passed its own checks. <strong>One decoder is not enough.</strong> We now take geometry from the commercial importer and the feature history from the open one, and we've <a href="https://github.com/cadmpeg/cadmpeg/issues/170">reported the failures upstream</a>.</p>
 
 <h2>What's not new</h2>
 <p>Neutral feature exchange between CAD systems goes back to the macro-parametric work of the early 2000s, and a closely related system, CADIR, appeared in August. We don't claim to be first. What we're adding is an open spec, an MIT implementation, Onshape as a target, and measurements anyone can rerun.</p>
 
+<h2>What's next</h2>
+<ul>
+<li>Hole, pattern and chamfer as kinds of their own.</li>
+<li>Fewer API calls per feature in the Onshape backend, then the other eight parts.</li>
+<li>Reading back more than dimensions: features added or removed in the CAD system.</li>
+<li>Running the Fusion and SolidWorks scripts.</li>
+</ul>
+
 <h2>Who did what</h2>
 <p>We steered the design with Claude over many rounds, pushing on correctness, generality and performance. Claude wrote and debugged the code and ran the measurements.</p>
 
-<p>Everything is in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>. Every table in the paper is regenerated from the repo at commit <code>865dde3</code>. Got a design that should open as an editable tree somewhere else? <a href="/#contact">Start a project →</a></p>
+<p>Everything is in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>, and every table in the paper is regenerated from the repo. Got a design that should open as an editable tree somewhere else? <a href="/#contact">Start a project →</a></p>
   </article>
 </main>
 <footer>
