@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Re-routing flexisette: ten open nets to zero, by routing the real board — PUNKFAB log</title>
+<meta name="description" content="We re-ran the PCB for flexisette, a cassette-shaped ESP32 music player, next to the board we shipped in June. The June board had 10 connections open and 5 DRC errors after days of work. The re-run has none, routed unattended in six seconds. The router now gets the placed KiCad board itself, and three leftover items turned out to be placement questions." />
+<link rel="canonical" href="https://punkfab.com/blog/flexisette-reroute/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/flexisette-reroute/" />
+<meta property="og:title" content="Re-routing flexisette: ten open nets to zero, by routing the real board" />
+<meta property="og:description" content="flexisette's June board had 10 connections open and 5 DRC errors. The unattended re-run has none, in six seconds of routing: the router now gets the real KiCad board, and three leftovers were placement questions." />
+<meta property="og:image" content="https://punkfab.com/blog/flexisette-reroute/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/flexisette-reroute/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="The flexisette board twice, side by side. Left, the June board with a long dashed orange line and several short ones marking open connections and magenta rings on DRC errors. Right, the re-run with no markers." />
+<meta property="article:published_time" content="2026-10-05T06:00:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Re-routing flexisette: ten open nets to zero, by routing the real board" />
+<meta name="twitter:description" content="flexisette's June board had 10 connections open and 5 DRC errors. The unattended re-run has none, in six seconds of routing: the router now gets the real KiCad board, and three leftovers were placement questions." />
+<meta name="twitter:image" content="https://punkfab.com/blog/flexisette-reroute/card.jpg" />
+<meta name="twitter:image:alt" content="The flexisette board before and after: open connections and DRC errors marked on the June board, none on the re-run." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">pcb · routing · post-mortem</p>
+  <h1>Re-routing flexisette: ten open nets to zero, by routing the real board</h1>
+  <p class="meta">2026-10-04 · Dan Newcome</p>
+  <article class="post">
+<p><strong>flexisette is the board that taught us most of what our PCB tooling knows, and in June it beat us anyway.</strong> It is a cassette-shaped ESP32-S3 music player: an OLED glowing through the tape window, a small class-D amp, USB-C and a LiPo, on the real outline of a compact cassette with its window, reel holes, screw holes and head notch. After three days of work we called it prototype-ready with about ten connections still open, left for hand-finishing. This week we re-ran it next to the original, <a href="/blog/einhander-reroute/">as we did with einhander</a>. Same circuit, same floorplan, nobody touching KiCad. The re-run has no open connections and no DRC errors, and the routing takes six seconds.</p>
+<p><img loading="lazy" src="compare.jpg" alt="The flexisette board drawn twice. Top, the June board: a long dashed orange line runs from the ESP32 module on the left to the amplifier on the right, with shorter dashed lines around the amplifier, marking 10 open connections; magenta rings mark DRC errors at the USB-C connector and at the left board edge. Bottom, the re-run: the same parts in the same places, routed, with no markers."></p>
+
+<h2>01 / The two boards</h2>
+<div class="table-wrap"><table>
+<tr><th></th><th>Shipped (June)</th><th>Re-run</th></tr>
+<tr><td>Open connections</td><td>10</td><td><strong>0</strong></td></tr>
+<tr><td>Shorts</td><td>0</td><td>0</td></tr>
+<tr><td>DRC errors, JLCPCB rules</td><td>5</td><td><strong>0</strong></td></tr>
+<tr><td>Pads not reached on their own layer</td><td>4</td><td><strong>0</strong></td></tr>
+<tr><td>Vias</td><td>26</td><td>47</td></tr>
+<tr><td>Track length</td><td>1263 mm</td><td>1000 mm</td></tr>
+<tr><td>Ground run as track instead of pour</td><td>350 mm</td><td>44 mm</td></tr>
+</table></div>
+<p>Both are 2-layer boards with a ground pour on the bottom, scored the same way. The re-run's netlist is identical to the shipped board's: 22 nets, the same pads on each. It passes KiCad DRC at every severity with five silkscreen warnings, and our checks for hole spacing, via sizes and pads reached only from the wrong side. It has not been through JLCPCB's online DFM or a human review yet, so it is not an order.</p>
+
+<h2>02 / What went wrong in June</h2>
+<p>In June the router never saw the board we were building. The pipeline asked tscircuit for a Specctra DSN file, patched that file with scripts (keepouts for the tape window and reel holes, merged net names), routed it with Freerouting, and injected the result into KiCad through its scripting API, which needs KiCad running. That left two descriptions of the board to keep in step: the KiCad file and the DSN. Our own roadmap listed the consequence as known gap number one: move a part, and the router still routes it where it used to be.</p>
+<p>The obvious fix is to export the DSN from KiCad itself, so the router gets exactly the board on disk. We tried that in June. KiCad's exporter returned "false" with no message, every time. A web search turned up reports of it being broken for years, so we gave up on it and built around it.</p>
+
+<h2>03 / The exporter was never broken</h2>
+<p><strong>KiCad refuses to export any board that contains a footprint with an empty reference, and when run from a script it says nothing about why.</strong> tscircuit exports its bare holes and vias as footprints with no reference. flexisette has one. einhander has four, and the same export failed there last week. Give those footprints a name for the round trip and the export works first time.</p>
+<p>What comes out is better than anything we were patching by hand:</p>
+<ul>
+<li>The ground pour goes to the router as a plane.</li>
+<li>The tape window, both reel holes and all four screw holes go out as keepouts.</li>
+<li>Coordinates are the board's own, so a moved part cannot be routed at its old position.</li>
+</ul>
+<p>The first run on the unchanged June placement left one item: a button pad 0.455 mm from the edge of the head notch, flagged against KiCad's default 0.5 mm edge rule. No open connections at all.</p>
+
+<h2>04 / The leftovers were placement questions</h2>
+<p>That first run flattered the placement. Small changes to the input moved the result between zero and three leftover items, which is what a marginal placement looks like. We treated each leftover as a question about the placement rather than a routing job, and each had an answer in the design source:</p>
+<div class="table-wrap"><table>
+<tr><th>Leftover</th><th>What the placement was doing</th><th>Change</th></tr>
+<tr><td>Button pad too close to the notch edge</td><td>The buttons sat 0.455 mm from the notch. That passes JLCPCB's 0.2 mm rule but not KiCad's default, and it is tight for a part people press.</td><td>Both up 0.5 mm.</td></tr>
+<tr><td>Decoupling cap's ground pad not connected</td><td>The cap sat on the bottom, directly under the ESP32's power pin at the board edge. One bottom track boxed its ground pad off from the pour.</td><td>2 mm inboard, under the module.</td></tr>
+<tr><td>Battery net open at the charger's capacitor</td><td>The capacitor was on the far side of the charger chip, 5 mm of crowded routing from the pin it serves.</td><td>Placed at the pin, by the same helper that places the other decoupling.</td></tr>
+</table></div>
+<p>After those three changes the pipeline reports a clean board, and it does so again when run from scratch. This is the point we keep coming back to: <strong>routing difficulty is set by placement</strong>, and what a router leaves behind is the cheapest placement review you can get. In June we read the same kind of leftovers as a routing tail and went looking for a better router.</p>
+
+<h2>05 / Three more things the board caught</h2>
+<ul>
+<li><strong>Cutouts need the edge clearance, not the track clearance.</strong> KiCad exports a cutout as a bare keepout, so the router kept only track clearance from it and ran a trace 0.14 mm from the tape window. The pipeline now grows every cutout keepout by the fab's copper-to-edge clearance.</li>
+<li><strong>Pours should connect surface-mount pads solidly.</strong> With thermal reliefs on every pad, a small cap in a tight spot can end up with no spokes reaching the pour. Thermal reliefs now go on through-hole pads only.</li>
+<li><strong>Our second router was routing a rectangle.</strong> The bridge to tscircuit's capacity autorouter gave it the board's bounding box. On a cassette that includes the tape window, the reel holes and the head notch. It now passes the real outline and every cutout.</li>
+</ul>
+<p>The capacity autorouter also connected every net on this board with no shorts, but left 14 clearance violations, so Freerouting's candidate is the one we kept. Both are scored by the same harness as in <a href="/blog/pcbworld-evals/">the benchmark post</a>, and it keeps whichever is closest to done.</p>
+
+<h2>06 / What's still open</h2>
+<ul>
+<li><strong>Review and fab DFM.</strong> JLCPCB's own DFM flagged things on the June board that KiCad's DRC did not, such as USB-C mounting holes close to traces. The re-run needs the same pass.</li>
+<li><strong>Signal integrity is not checked.</strong> USB runs at full speed here and the I2S lines are slow, so the risk is low. But clean DRC is a geometry result, not a signal-integrity sign-off.</li>
+<li><strong>One board.</strong> The same path should be re-run on einhander, where Freerouting has so far only seen tscircuit's DSN.</li>
+</ul>
+<p>The re-run is in <code>pcb-rerun/</code> at <a href="https://github.com/punkfab/flexisette">punkfab/flexisette</a>, next to the original <code>pcb/</code>, with the comparison and a one-command reproduce. The pipeline (<code>route2.sh</code>) and every fix above are in the <code>pcb-layout</code> skill at <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>. Have a board stuck a few nets from done? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
