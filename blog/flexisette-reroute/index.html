@@ -17,14 +17,14 @@
 <meta property="og:image:type" content="image/jpeg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="627" />
-<meta property="og:image:alt" content="The flexisette board twice, side by side. Left, the June board with a long dashed orange line and several short ones marking open connections and magenta rings on DRC errors. Right, the re-run with no markers." />
+<meta property="og:image:alt" content="The re-routed flexisette board: a cassette-shaped outline with the tape window, two reel holes and the head notch, fully routed." />
 <meta property="article:published_time" content="2026-10-05T06:00:00Z" />
 <meta property="article:author" content="PUNKFAB" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Re-routing flexisette: ten open nets to zero, by routing the real board" />
 <meta name="twitter:description" content="flexisette's June board had 10 connections open and 5 DRC errors. The unattended re-run has none, in six seconds of routing: the router now gets the real KiCad board, and three leftovers were placement questions." />
 <meta name="twitter:image" content="https://punkfab.com/blog/flexisette-reroute/card.jpg" />
-<meta name="twitter:image:alt" content="The flexisette board before and after: open connections and DRC errors marked on the June board, none on the re-run." />
+<meta name="twitter:image:alt" content="The re-routed flexisette board: a cassette-shaped outline with the tape window, two reel holes and the head notch, fully routed." />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -42,9 +42,10 @@
   <p class="meta">2026-10-04 · Dan Newcome</p>
   <article class="post">
 <p><strong>flexisette is the board that taught us most of what our PCB tooling knows, and in June it beat us anyway.</strong> It is a cassette-shaped ESP32-S3 music player: an OLED glowing through the tape window, a small class-D amp, USB-C and a LiPo, on the real outline of a compact cassette with its window, reel holes, screw holes and head notch. After three days of work we called it prototype-ready with about ten connections still open, left for hand-finishing. This week we re-ran it next to the original, <a href="/blog/einhander-reroute/">as we did with einhander</a>. Same circuit, same floorplan, nobody touching KiCad. The re-run has no open connections and no DRC errors, and the routing takes six seconds.</p>
-<p><img loading="lazy" src="compare.jpg" alt="The flexisette board drawn twice. Top, the June board: a long dashed orange line runs from the ESP32 module on the left to the amplifier on the right, with shorter dashed lines around the amplifier, marking 10 open connections; magenta rings mark DRC errors at the USB-C connector and at the left board edge. Bottom, the re-run: the same parts in the same places, routed, with no markers."></p>
+<p><img src="hero.jpg" alt="The re-routed flexisette board on its own: a cassette-shaped outline in cyan with the rectangular tape window between two round reel holes, four corner screw holes and the head notch cut out of the bottom edge. The ESP32 module is on the left, USB-C and the charger along the top, the amplifier and speaker connector on the right, joined by magenta top-layer and blue bottom-layer traces."></p>
 
 <h2>01 / The two boards</h2>
+<p><img loading="lazy" src="compare.jpg" alt="The flexisette board drawn twice. Top, the June board: a long dashed orange line runs from the ESP32 module on the left to the amplifier on the right, with shorter dashed lines around the amplifier, marking 10 open connections; magenta rings mark DRC errors at the USB-C connector and at the left board edge. Bottom, the re-run: the same parts in the same places, routed, with no markers."></p>
 <div class="table-wrap"><table>
 <tr><th></th><th>Shipped (June)</th><th>Re-run</th></tr>
 <tr><td>Open connections</td><td>10</td><td><strong>0</strong></td></tr>
