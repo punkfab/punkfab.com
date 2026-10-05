@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cooling a robot joint motor from inside the copper — PUNKFAB log</title>
+<meta name="description" content="A design study in simulation: a robot joint motor wound with hollow copper conductors and coolant flowing through every turn. Sized, field-solved and drawn as an assembly, it gives three to four times the continuous torque of the same motor air-cooled, and lets the gear ratio drop from 9:1 to about 3:1. A plain water jacket gets 70% of the way with ordinary wire." />
+<link rel="canonical" href="https://punkfab.com/blog/liquid-cooled-qdd/" />
+<meta property="og:url" content="https://punkfab.com/blog/liquid-cooled-qdd/" />
+<meta property="og:title" content="Cooling a robot joint motor from inside the copper" />
+<meta property="og:description" content="A joint motor wound with hollow copper and coolant in every turn, sized, field-solved and drawn in simulation. Three to four times the continuous torque of the same motor air-cooled, and a plain water jacket gets 70% of the way." />
+<meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/liquid-cooled-qdd/render-cutaway.jpg" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">design study · actuators</p>
+  <h1>Cooling a robot joint motor from inside the copper</h1>
+  <p class="meta">2026-10-04 · Dan Newcome</p>
+  <article class="post">
+<p><strong>The idea:</strong> motor drives have become good at very high current, so what limits a robot joint motor now is heat. If the heat is taken out actively, the copper can be run much harder, the motor makes more torque directly, and the joint needs less gear reduction. Less gearing means a joint that is easier to backdrive and has less reflected inertia.</p>
+<p><strong>We designed a motor around that idea and tested it in simulation:</strong> a sizing model, a magnetic field solution, and a CAD assembly, all driven by one set of parameters. The idea mostly holds. It also has a price, and a much simpler version gets most of the way. Nothing here has been built.</p>
+<p><img loading="lazy" src="render-cutaway.jpg" alt="Cutaway render of the motor: copper coils of hollow rectangular conductor around the stator teeth, magnets on the rotor, coolant shown blue in the outer jacket, a manifold ring and a drive cold plate at the rear"></p>
+
+<h2>The design</h2>
+<ul>
+<li><strong>Hollow copper conductors.</strong> Coolant flows through the bore of every turn, so heat leaves from inside the copper. In an ordinary motor it has to cross wire insulation, a slot liner, the iron and the housing first.</li>
+<li><strong>The drive on the motor,</strong> on the same coolant loop.</li>
+<li><strong>An outer jacket fed with the coldest coolant.</strong> The flow goes radiator, drive, jacket, then the conductor bores. The outside of the motor stays near the coolant's return temperature whatever the copper is doing.</li>
+<li><strong>Dielectric oil as the coolant,</strong> because it touches live copper.</li>
+</ul>
+<p>The size is Ø120 mm, the diameter of a RobStride RS04, a common robot joint actuator. That gives a known baseline: 35 N·m continuous and 120 N·m peak, through a 9:1 gearbox.</p>
+
+<h2>01 / The first model was wrong in an instructive way</h2>
+<p><strong>The first pass was a sizing model:</strong> copper loss, flow and pressure in the bores, heat transfer to the coolant, drive losses. It needed one number it couldn't compute, the current at which the iron saturates and extra current stops adding torque. We assumed a typical value.</p>
+<p><strong>With that assumption, the answer was discouraging.</strong> The cooling could carry 6.5 times the current the iron could use. Heat wasn't the limit at all; the iron was, and the spare cooling was wasted.</p>
+<p><strong>So we solved the field instead of assuming it.</strong> A nonlinear 2-D magnetic solution of the same cross-section, with a real steel curve, gave a different picture:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Current density in the copper</th><th>Torque</th><th>Torque per amp</th><th>The assumption had said</th></tr></thead>
+<tbody>
+<tr><td>14 A/mm²</td><td>8.5 N·m</td><td>98%</td><td>6.8 N·m</td></tr>
+<tr><td>26 A/mm²</td><td>14.8 N·m</td><td>92%</td><td>10.7 N·m</td></tr>
+<tr><td>42 A/mm²</td><td>20.2 N·m</td><td>77%</td><td>13.5 N·m</td></tr>
+</tbody></table></div>
+<p>Saturation is much gentler than assumed. For scale, an air-cooled motor runs its copper at around 10 A/mm². The iron and a joint-sized coolant pump run out at nearly the same current, so heat is still a real limit.</p>
+
+<h2>02 / More iron doesn't help. More size does.</h2>
+<p><strong>The obvious fix for saturation is more iron:</strong> wider teeth, less copper. We ran the field solution on eleven variants of the same Ø120 × 25 mm motor.</p>
+<p><strong>Wider teeth do delay saturation, a long way.</strong> But they take copper away, so the same torque needs a higher current density and makes more heat. The two effects cancel. Most variants landed within about 10% of each other, around 16 N·m for 850 W of heat, and the most iron-heavy one was 20% worse.</p>
+<p><strong>The one clear gain was shallower slots,</strong> which let the rotor grow. Beyond that, more torque at the same heat means a longer or wider motor.</p>
+<p><img loading="lazy" src="study.jpg" alt="Top: torque against current for the field solution and the assumed model; torque against heat for six variants; torque per amp against current. Bottom: flux density in the stator iron at zero, 26 and 100 A/mm², the teeth going from dark to saturated"></p>
+
+<h2>03 / The motor, drawn</h2>
+<p><strong>The shallow-slot version became the design.</strong> Each tooth carries one coil: a single column of four turns of hollow rectangular copper, 2.4 × 2.2 mm with a Ø1.2 mm bore.</p>
+<div class="table-wrap"><table>
+<tbody>
+<tr><td>Size</td><td>Ø120 × 68 mm, about 1.7 kg (estimate)</td></tr>
+<tr><td>Continuous torque at 850 W of heat</td><td>16.6 N·m at 132 A per phase</td></tr>
+<tr><td>Temperatures at that point</td><td>skin 61 °C, hottest copper 126 °C, coolant in at 60 °C</td></tr>
+<tr><td>At the limit of a 3 L/min pump</td><td>21.3 N·m, about 1.8 kW</td></tr>
+</tbody></table></div>
+<p>The same iron, air-cooled on the RS04's heat budget, gives about 5 N·m. In this version the pump runs out before the iron does, so heat is the limit again.</p>
+<p><img loading="lazy" src="render-stator.jpg" alt="Render of the wound stator: 24 copper coils, one per tooth, each a column of four turns, with the manifold ring behind"></p>
+<p><strong>The CAD is generated from the same parameters as the field solution,</strong> and it checks its own parts for interference. Two things came out of that:</p>
+<ul>
+<li><strong>Two coils sharing a slot collided</strong> where their end bends leave the iron. The conductor is now 0.1 mm narrower, which leaves 0.4 mm between them.</li>
+<li><strong>The end bends are tight:</strong> a bend radius under twice the conductor's width, on a hollow section. That needs a forming trial before the design can be trusted.</li>
+</ul>
+<p><strong>The field solver had a bug of its own.</strong> The new slot shape meshed into needle-thin elements, and the solver quietly failed to converge, reporting torque a little low. It now leaves out the geometry that caused it and warns when a solve doesn't converge.</p>
+
+<h2>04 / What it buys at the joint, and what it costs</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Gear ratio</th><th>Continuous output torque at 850 W</th><th>Heat to hold 35 N·m</th><th>Reflected inertia against 9:1</th></tr></thead>
+<tbody>
+<tr><td>6:1</td><td>95 N·m</td><td>95 W</td><td>0.44×</td></tr>
+<tr><td>4:1</td><td>64 N·m</td><td>216 W</td><td>0.20×</td></tr>
+<tr><td>3:1</td><td>48 N·m</td><td>404 W</td><td>0.11×</td></tr>
+<tr><td>2:1</td><td>32 N·m</td><td>1105 W</td><td>0.05×</td></tr>
+</tbody></table></div>
+<p><strong>At 3:1 the joint beats the RS04's continuous torque with a ninth of the reflected inertia.</strong> It also spends about five times the power holding that torque, since the RS04 needs about 88 W. Torque rises with current and heat with its square, so a low-ratio joint pays for its transparency in energy. Direct drive is out of reach at this size.</p>
+<p><strong>Two smaller findings.</strong> "Very high current" turned out to be a choice, not a goal: the same torque can be had at 280 A or 70 A by changing the number of turns, and the lower current wastes less in the drive. And running the coolant hot costs torque, because copper resistance rises and the magnets weaken. What it saves is radiator size.</p>
+
+<h2>05 / The simpler motor</h2>
+<p><strong>What if the conductors are solid and the only cooling is the jacket?</strong> Filling in the bore gives 28% more copper, and because each coil is a single column, every conductor already has a face against a tooth.</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>Torque</th><th>Heat</th><th>Hottest copper</th></tr></thead>
+<tbody>
+<tr><td>Jacket only</td><td>11.7 N·m</td><td>343 W</td><td>180 °C</td></tr>
+<tr><td>Hollow conductors, 850 W</td><td>16.6 N·m</td><td>849 W</td><td>126 °C</td></tr>
+<tr><td>Hollow conductors, pump limit</td><td>21.3 N·m</td><td>1775 W</td><td>198 °C</td></tr>
+</tbody></table></div>
+<p><strong>The jacket alone gets about 70% of the torque, with ordinary wire and no manifold.</strong> Through 3:1 that is about 34 N·m continuous, roughly the RS04's rating. The slot liner is 40% of the heat path, so potting the winding in a conductive resin would take it to about 14 N·m. This part is a simple heat-path estimate with assumed values, not a thermal field solution.</p>
+<p>So the jacket-only motor is the one to build first. The hollow conductors are an upgrade for when the extra 40–80% of torque is worth a custom conductor, a manifold and a dielectric coolant loop.</p>
+
+<h2>What isn't done</h2>
+<p><strong>None of this has been built or measured.</strong> The field solution is 2-D, so a 25 mm stack will lose some torque to its ends. It solves one rotor position, with a generic steel curve, and doesn't check for demagnetization. Coolant properties and every number in the jacket-only estimate are handbook or assumed values. The CAD has no turn-to-turn crossovers, coil leads, bus bars, seals or fasteners, and the gear stage isn't designed. The hollow conductor is a custom part that nobody has tried to bend.</p>
+
+<h2>Who did what</h2>
+<p>We had the thesis and asked the questions that turned the study: whether saturation means a bigger motor, and what happens with a plain jacket. Claude built the sizing model, wrote the field solver, ran the variants, generated the CAD and the renders, and found two of its own errors along the way: the saturation assumption the field solution overturned, and the mesh defect in the solver.</p>
+<p>Everything is open in <a href="https://github.com/punkfab/robot-actuators">punkfab/robot-actuators</a>, under <code>qdd-liquid/</code>. Have an actuator or mechanism idea that should be sized, solved and drawn before anything is ordered? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
