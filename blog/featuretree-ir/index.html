@@ -8,6 +8,7 @@
 <meta property="og:title" content="One feature tree, several CAD systems" />
 <meta property="og:description" content="The featuretree IR spec, emitted natively into FreeCAD, build123d and Onshape and checked by re-reading. FreeCAD matches the reference on 10 of 11 NIST parts; 43 of 46 edits made in FreeCAD read back correctly; the format covers about half of what designers used." />
 <meta property="og:type" content="article" />
+<meta property="og:image" content="https://punkfab.com/blog/featuretree-ir/freecad-tree.png" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -69,6 +70,10 @@
 </tbody></table></div>
 
 <p>Each feature keeps its name in the target's tree. That name is the only thing used to match an edit on the way back.</p>
+
+<p><img loading="lazy" alt="FreeCAD 1.0 Part Design workbench. The Model tree on the left lists the features of one part under Body: the base pad named body, blind0 through blind13, then pocket0, pocket1 and cut2 through cut13, each cut with its placement plane. The 3D view on the right shows the rebuilt NIST CTC-01 part: an H-shaped plate with through-holes, two slots, a hexagonal boss, side cross-holes and embossed NIST lettering." src="freecad-tree.png" /></p>
+
+<p>One of the eleven test parts, NIST CTC-01, open in FreeCAD. The Model panel on the left is the format's feature list as native FreeCAD features, with the same names: <code>body</code>, <code>blind0</code>, <code>cut3</code>. Each placed cut shows up as a plane and a pocket. These are the entries we edited in the round-trip test below.</p>
 
 <p>FreeCAD and Onshape are driven from outside and we've measured both. build123d, a Python CAD library, is the reference that everything else is compared with. Fusion and SolidWorks can only be scripted from inside the program, so for those we generate a script. <strong>Those two scripts have not been run yet</strong>, and we report no results for them.</p>
 
