@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Placement hints: telling the placer roughly where things go — PUNKFAB log</title>
+<meta name="description" content="A small text language for saying roughly where parts go on a PCB: on this edge, right of that chip, near this pin. We wired it into our placer as soft constraints and measured it on 52 real boards. The placer follows the hints, and the big parts land twice as close to where the designer put them. The gain in boards that route clean is small: 15% to 21%." />
+<link rel="canonical" href="https://punkfab.com/blog/placement-hints/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/placement-hints/" />
+<meta property="og:title" content="Placement hints: telling the placer roughly where things go" />
+<meta property="og:description" content="Relative placement hints for PCBs, in the style of reladraw. On 52 real boards the placer met 80-85% of them and put the big parts twice as close to the designer's floorplan. Clean routes went from 15% to 21%." />
+<meta property="og:image" content="https://punkfab.com/blog/placement-hints/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/placement-hints/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="One board drawn three times beside the hint text. The designer's placement has a connector on the left edge and two chips in the middle; placed from scratch without hints the parts are jumbled and the route has 3 DRC errors; placed with nine hints the layout matches the designer's and routes clean." />
+<meta property="article:published_time" content="2026-10-06T03:30:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Placement hints: telling the placer roughly where things go" />
+<meta name="twitter:description" content="Relative placement hints for PCBs, in the style of reladraw. On 52 real boards the placer met 80-85% of them and put the big parts twice as close to the designer's floorplan. Clean routes went from 15% to 21%." />
+<meta name="twitter:image" content="https://punkfab.com/blog/placement-hints/card.jpg" />
+<meta name="twitter:image:alt" content="A board placed three ways beside the hints that produced the third." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">pcb · placement · evals</p>
+  <h1>Placement hints: telling the placer roughly where things go</h1>
+  <p class="meta">2026-10-05 · Dan Newcome</p>
+  <article class="post">
+<p><strong>In <a href="/blog/tracemaker-router/">the last post</a>, designers' placements routed clean and automatic ones mostly did not.</strong> The designers were working from the same netlist. What they had that the placers lacked is information the netlist doesn't carry: the USB port goes on this edge, the regulator lives in that corner, this capacitor belongs to that pin. So we built a way to say those things, and measured what it buys.</p>
+<ul>
+<li>A hint is a rough, relative statement in a small text language: <code>J1 on edge left</code>, <code>U2 right of U1</code>, <code>C1 near U1.7</code>.</li>
+<li>On 52 real boards, our placer met <strong>80–85%</strong> of the hints it was given, and the big parts landed about <strong>twice as close</strong> to where the designer had put them.</li>
+<li>The gain in routing was small: boards that route clean went from <strong>15% to 21%</strong>. The designers' placements get 63% on the same boards.</li>
+</ul>
+<p><img loading="lazy" src="boards.jpg" alt="One board drawn three times beside the hint text. The designer's placement has a connector on the left edge and two chips in the middle; placed from scratch without hints the parts are jumbled and the route has 3 DRC errors; placed with nine hints the layout matches the designer's and routes clean."></p>
+
+<h2>01 / The language</h2>
+<p>The model comes from <a href="https://github.com/reladraw/reladraw">reladraw</a>, a diagram language where you say where things go without giving coordinates. Positions are relative, a gap is a minimum distance, and statements that cannot all hold are refused. That is how a floorplan is described at a whiteboard, and it is text, so an agent can write it, a person can read it, and it diffs.</p>
+<pre><code>group psu: U4 L1 C5 C6          # keep these together
+U1    center
+J1    on edge left
+psu   bottom-left
+U2    right of U1  level with U1
+C1    near U1.7  within: 2      # a pad, edge-to-edge mm
+Y1    near U1    weight: 3
+J2    rotate 90</code></pre>
+<p>The PCB dialect adds what a diagram has no use for: board edges, regions of the board, a named pad as a target, a pinned rotation, and real footprint sizes. A statement about a part that does not exist, or one that places a part against itself, is an error with a line number.</p>
+
+<h2>02 / How the placer uses it</h2>
+<p>Hints are soft. Each one becomes a term in the placer's cost: the distance, in millimetres, by which it is not met. The placer weighs that against wirelength, and against hard penalties for parts that overlap or leave the board. When it finishes it lists every hint it could not meet and by how much, so a hint that fights the wiring is visible.</p>
+<p>The placer itself had to be rewritten for this. The earlier version annealed positions and then picked rotations in a separate pass, with no step to make the result legal. The new one handles position and rotation in one cost, lets parts pass through each other early and not late, and pushes overlapping bodies apart at the end.</p>
+
+<h2>03 / The measurement</h2>
+<p>Writing hints by hand for 52 boards would test our hint-writing. So the hints are derived from each designer's own placement, at three levels of detail:</p>
+<ul>
+<li><strong>Level 1, anchors:</strong> every part that sits against a board edge goes on that edge, and each part with 8 or more pads gets a region such as <code>top-left</code> or <code>center</code>.</li>
+<li><strong>Level 2:</strong> adds how the big parts sit relative to each other: <code>U3 right of U1 level with U1</code>.</li>
+<li><strong>Level 3:</strong> adds each small part <code>near</code> the big part it sits beside.</li>
+</ul>
+<p>Every part is then placed from scratch, routed by TraceMaker with a 20-second budget, and judged by KiCad DRC under the board's own rules. The boards are the 52 from <a href="https://github.com/punkfab/pcb-corpus">our corpus</a> with up to 150 connections and a placement that is legal as designed.</p>
+<div class="table-wrap"><table>
+<tr><th>Placement</th><th>Routes clean</th><th>Connections routed</th><th>DRC errors before routing</th><th>Hints per board (met)</th><th>Big parts: distance from the designer's</th></tr>
+<tr><td>Designer's</td><td>0.63</td><td>95.9%</td><td>0</td><td>–</td><td>0</td></tr>
+<tr><td>No hints</td><td>0.15</td><td>91.5%</td><td>30</td><td>–</td><td>26% of the board diagonal</td></tr>
+<tr><td>Level 1: anchors</td><td>0.19</td><td>92.8%</td><td>25</td><td>12 (85%)</td><td>12%</td></tr>
+<tr><td>Level 2: + relations</td><td><strong>0.21</strong></td><td>92.9%</td><td>26</td><td>16 (80%)</td><td>11%</td></tr>
+<tr><td>Level 3: + near</td><td>0.19</td><td>91.5%</td><td>30</td><td>34 (83%)</td><td>12%</td></tr>
+</table></div>
+
+<h2>04 / What it says</h2>
+<p><strong>Hints do what they say.</strong> A dozen statements per board are enough to halve how far the big parts end up from the designer's floorplan, and four in five are met outright. In the board at the top, nine hints reproduce the designer's arrangement: the connector on the left edge, the two chips side by side.</p>
+<p><strong>The routing gain is real but small.</strong> With level-2 hints, three boards that failed without hints route clean, and none that passed is lost. Counting connections, hints route more on 12 boards and fewer on 8.</p>
+<p><strong>More detail did not help.</strong> Level 3 gives the placer 34 hints per board and routes no better than no hints at all. Pinning every small part beside its chip leaves the placer less room to sort out the wiring.</p>
+<p><strong>The floorplan is not the bottleneck. Legality is.</strong> Only about 11 of the 52 placements have zero DRC errors before any routing, with or without hints. The rest average 25 to 30 errors each, mostly pads too close together on boards where the designer packed parts tighter than our box model allows. A router cannot fix a placement that is already illegal. That is where the remaining distance to the designers' 63% is, and it is the next thing to work on.</p>
+<p><strong>Shorter wires are not the goal.</strong> Without hints, our placer's wiring is 24% shorter than the designer's, and it routes worse. The designer's longer wiring is paying for something: edge constraints, room around dense parts, legal spacing.</p>
+
+<h2>05 / A correction to the last post</h2>
+<p>The last post said our placer got 1 of 10 medium boards clean. That was the earlier placer, and the number stands for it. Building this one turned up a bug that affected later work: the placer was writing copper pours back into its output, and a router that reads the board file treats a stale pour as solid copper in its way. On boards with pours, that made our placements look almost unroutable. The placement-score weights reported in that post's update were fitted partly on those results. We are re-running that study and will correct the post.</p>
+
+<h2>06 / Caveats</h2>
+<ul>
+<li>The hints are derived from the answer. Hand-written hints will be less accurate, so this is closer to an upper bound for what hints of this kind can do with this placer.</li>
+<li>One placement per board, one router, a 20-second budget, boards of up to 150 connections.</li>
+<li>Bodies are boxes. Footprints with pads around a hollow middle, and boards whose designers overlap courtyards, are modelled badly.</li>
+<li>Facing is not handled yet: a connector hinted onto an edge is not turned to face out.</li>
+</ul>
+<p>The language is <code>place_hints.py</code> and the placer is <code>place_kicad.py</code>, both in the <code>pcb-layout</code> skill at <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>, with the study and its results under <code>evals/corpus</code>. Thanks to reladraw's author for the model. Have a board that needs placing or routing? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
