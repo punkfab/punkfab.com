@@ -113,7 +113,7 @@
 
 <h2>07 / A corpus with real rules</h2>
 <p>PCBench's boards are KiCad 5 files with no project file, so every one is judged against KiCad's default rules. For placement work we want current designs with their own rules, so we started a second corpus from GitHub. It has 235 boards from 170 repositories under open-hardware and permissive licences, each pinned to a commit, with its licence recorded. 178 are two-layer and 57 four-layer.</p>
-<p>A board qualifies if it opens in KiCad 9, has a project file beside it, and its designer's routing leaves nothing open. Only <strong>77 of the 235</strong> have zero DRC errors as their designers shipped them, so those 77 are the set where a clean pass is a fair bar. The collector and the manifest are in the repository; the boards themselves are downloaded, not redistributed.</p>
+<p>A board qualifies if it opens in KiCad 9, has a project file beside it, and its designer's routing leaves nothing open. Only <strong>77 of the 235</strong> have zero DRC errors as their designers shipped them, so those 77 are the set where a clean pass is a fair bar. The boards are published as <a href="https://github.com/punkfab/pcb-corpus">punkfab/pcb-corpus</a>: each one as its designer shipped it and as an unrouted copy, with its project rules, its source commit and its own licence file.</p>
 
 <h2>08 / Caveats</h2>
 <ul>
