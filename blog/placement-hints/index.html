@@ -90,7 +90,7 @@ J2    rotate 90</code></pre>
 <p><strong>Shorter wires are not the goal.</strong> Without hints, our placer's wiring is 24% shorter than the designer's, and it routes worse. The designer's longer wiring is paying for something: edge constraints, room around dense parts, legal spacing.</p>
 
 <h2>05 / A correction to the last post</h2>
-<p>The last post said our placer got 1 of 10 medium boards clean. That was the earlier placer, and the number stands for it. Building this one turned up a bug that affected later work: the placer was writing copper pours back into its output, and a router that reads the board file treats a stale pour as solid copper in its way. On boards with pours, that made our placements look almost unroutable. The placement-score weights reported in that post's update were fitted partly on those results. We are re-running that study and will correct the post.</p>
+<p>The last post said our placer got 1 of 10 medium boards clean. That was the earlier placer, and the number stands for it. Building this one turned up a bug that affected later work: the placer was writing copper pours back into its output, and a router that reads the board file treats a stale pour as solid copper in its way. On boards with pours, that made our placements look almost unroutable. The placement-score figures in that post's update were fitted partly on those results. We re-ran the study and corrected the post: the combined score picks the better-routing placement 79% of the time on held-out boards, not 89%.</p>
 
 <h2>06 / Caveats</h2>
 <ul>
