@@ -24,6 +24,11 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
+      <span class="date">2026-10-06</span>
+      <a class="title" href="/blog/featuretree-cells/">Recognising CAD features by cutting the stock into cells</a>
+      <p>A second way to recover a feature tree from a STEP file: split the bounding box with the part's own surfaces, then merge the empty cells into cuts. It recovers a flange coupling exactly, passes two of eleven NIST parts with about half the features our slicer needs, gets closer on four more, and fails on drafted and conical parts.</p>
+    </li>
+    <li>
       <span class="date">2026-10-05</span>
       <a class="title" href="/blog/tracemaker-router/">We benchmarked a new open-source router against ours. It won, so we added it.</a>
       <p>TraceMaker, a new open-source autorouter built largely by coding agents, finished 99%, 100% and 90% of PCBWorld's real boards clean on our machine, against our 78%, 70% and 20%. We added it and an older Freerouting as backends and now match it. With placement to do as well, its placer gets half the boards clean, ours one in ten, and the designers' placements all of them. Also: a repair step that makes the tscircuit router's output legal, measured weights for our placement score, and a public corpus of 235 boards with their own rules.</p>

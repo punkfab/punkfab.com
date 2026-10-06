@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recognising CAD features by cutting the stock into cells — PUNKFAB log</title>
+<meta name="description" content="A second way to recover a feature tree from a STEP file: split the bounding box with the part's own surfaces and merge the empty cells into cuts. It verifies 2 of 11 NIST parts with half the features, beats our slicer on 4 more, and fails on drafted parts." />
+<link rel="canonical" href="https://punkfab.com/blog/featuretree-cells/" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/featuretree-cells/" />
+<meta property="og:title" content="Recognising CAD features by cutting the stock into cells" />
+<meta property="og:description" content="A second way to recover a feature tree from a STEP file: split the bounding box with the part's own surfaces and merge the empty cells into cuts. It verifies 2 of 11 NIST parts with half the features, beats our slicer on 4 more, and fails on drafted parts." />
+<meta property="og:image" content="https://punkfab.com/blog/featuretree-cells/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/featuretree-cells/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="Four horizontal slabs of a flange coupling seen from above, each split into 54 cells. Material cells are filled teal and empty cells are pale." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Recognising CAD features by cutting the stock into cells" />
+<meta name="twitter:description" content="A second way to recover a feature tree from a STEP file: split the bounding box with the part's own surfaces and merge the empty cells into cuts. It verifies 2 of 11 NIST parts with half the features, beats our slicer on 4 more, and fails on drafted parts." />
+<meta name="twitter:image" content="https://punkfab.com/blog/featuretree-cells/card.jpg" />
+<meta name="twitter:image:alt" content="Four horizontal slabs of a flange coupling seen from above, each split into 54 cells. Material cells are filled teal and empty cells are pale." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">experiment · featuretree</p>
+  <h1>Recognising CAD features by cutting the stock into cells</h1>
+  <p class="meta">2026-10-06 · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · <code>cell_recognize.py</code></p>
+  <article class="post">
+
+<p><a href="/blog/featuretree/">featuretree</a> takes a STEP file, which holds a part's shape but not how it was built, and recovers a list of features that rebuilds it. Until this week it had one way of doing that. We've now tried a second, and this post is what happened: where it's better, and where it's clearly worse.</p>
+
+<h2>Why we went looking</h2>
+<p>Our recogniser works by slicing. It guesses a build direction, cuts the part into cross-sections along it, and traces the outlines it finds. That works well when the outlines are tidy.</p>
+
+<p>We ran it on someone else's example part, a flange coupling exported by <a href="https://github.com/DingoOz/BlenderMesh2STEP">BlenderMesh2STEP</a>, a Blender add-on that turns meshes into exact STEP solids. It's a simple part: a plate, a hub, a bore, a key slot, four counterbored holes. We recovered 78% of it.</p>
+
+<p>The cause was three bugs in how we handle circles, plus one awkward detail in the part. The key slot starts exactly at the bore's edge, so the two outlines meet at a single point. Our tracer followed them as one loop that touches itself, and the rebuild failed. With those fixed, the slicer recovers the flange exactly. But it's the third part we've seen fail on touching outlines, so we wanted a method that doesn't trace outlines at all.</p>
+
+<h2>The idea</h2>
+<p>Cell decomposition is an old idea from the feature-recognition literature of the 1990s. It works on volumes instead of outlines:</p>
+<ol>
+<li><strong>Start with the stock.</strong> Take the part's bounding box.</li>
+<li><strong>Cut it into cells.</strong> Extend every flat face and every cylinder of the part across the whole box. Those surfaces chop the box into cells. Each cell is either entirely material or entirely empty.</li>
+<li><strong>Label each cell.</strong> Test a few points inside it against the part.</li>
+<li><strong>Merge empty cells into cuts.</strong> Empty cells that sit side by side, and stay empty over the same range of heights, become one cut: a profile and a depth.</li>
+<li><strong>Pick the fewest cuts.</strong> Repeatedly take the cut that removes the most empty space not yet removed.</li>
+</ol>
+
+<p><img loading="lazy" alt="Four horizontal slabs of a flange coupling seen from above, each split into 54 cells. Material cells are filled teal and empty cells are pale. From left to right the slabs run from the base of the plate up to the hub: the bore and four small bolt holes are empty at the bottom, the bolt holes widen into counterbores, a ring groove appears around the hub, and in the top slab everything except the hub is empty." src="cells-flange.png" /></p>
+
+<p>The flange, split into 324 cells, seen from above at four heights. The grey lines are the part's own surfaces extended across the box. Reading left to right you can see the features appear: bolt holes, then their counterbores, then the groove under the hub and the key slot, then the hub standing alone.</p>
+
+<p>The result is a "stock minus cuts" tree. It describes the part the way a machinist would, not necessarily the way its designer built it. A boss is whatever is left after cutting around it.</p>
+
+<h2>Two things that went wrong on the way</h2>
+<ul>
+<li><strong>A point on the bore's axis was labelled as material.</strong> The geometry kernel's inside/outside test gave the wrong answer for a point sitting exactly on a line of symmetry. We now test three off-centre points per cell and take a vote.</li>
+<li><strong>Splitting with every surface at once shattered the part.</strong> On a part with holes in several directions, a third of the empty cells weren't simple prisms in any direction, so nothing could merge them. We now split once per build direction, using only the surfaces that make sense for that direction, and let the cuts from all directions compete.</li>
+</ul>
+
+<h2>Results</h2>
+<p>On the flange it recovers the part exactly, as a stock block and 16 cuts, in about 12 seconds. The 16 are the ones you'd list by hand: the bore, the key slot, the groove, four holes, four counterbores, four rounded corners, and the cut around the hub.</p>
+
+<p>Then the eleven parts of NIST's CAD test suite, next to the slicer. A part passes at 99.5% overlap and volume within 0.5%.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Part</th><th>Slicer overlap</th><th>Slicer features</th><th>Cells overlap</th><th>Cells features</th><th>Cells time</th></tr></thead>
+<tbody>
+<tr><td>CTC-01</td><td>99.73% ✓</td><td>54</td><td>99.73% ✓</td><td>30</td><td>128 s</td></tr>
+<tr><td>CTC-02</td><td>92.28%</td><td>144</td><td>22.06%</td><td>162</td><td>725 s</td></tr>
+<tr><td>CTC-03</td><td>94.38%</td><td>64</td><td>97.73%</td><td>34</td><td>145 s</td></tr>
+<tr><td>CTC-04</td><td>99.03%</td><td>108</td><td>rebuild failed</td><td>93</td><td>147 s</td></tr>
+<tr><td>CTC-05</td><td>98.05%</td><td>57</td><td>98.06%</td><td>56</td><td>120 s</td></tr>
+<tr><td>FTC-06</td><td>97.72%</td><td>31</td><td>rebuild failed</td><td>44</td><td>70 s</td></tr>
+<tr><td>FTC-07</td><td>96.42%</td><td>29</td><td>20.01%</td><td>53</td><td>33 s</td></tr>
+<tr><td>FTC-08</td><td>98.75%</td><td>37</td><td>99.28%</td><td>50</td><td>212 s</td></tr>
+<tr><td>FTC-09</td><td>99.85% ✓</td><td>80</td><td>99.98% ✓</td><td>42</td><td>104 s</td></tr>
+<tr><td>FTC-10</td><td>96.60%</td><td>38</td><td>99.17%</td><td>80</td><td>92 s</td></tr>
+<tr><td>FTC-11</td><td>100.00% ✓</td><td>2</td><td>74.12%</td><td>7</td><td>4 s</td></tr>
+</tbody></table></div>
+
+<p>One caution on reading the table. The slicer's overlap is a lower bound, because its result has to be rotated back onto the input and we only try 24 orientations. The cell method never leaves the input's frame, so its number is direct.</p>
+
+<h2>What the table says</h2>
+<ul>
+<li><strong>It passes two parts, both with about half the features.</strong> CTC-01 comes back as 30 features where the slicer needs 54, and FTC-09 as 42 where the slicer needs 80. Shorter trees are closer to what a person would want to edit.</li>
+<li><strong>It gets closer on four more</strong> without passing: CTC-03, FTC-08, FTC-10, and CTC-05 by a hair. CTC-03 is one of the parts the slicer loses to touching outlines.</li>
+<li><strong>It fails badly on three.</strong> CTC-02 and FTC-07 are moulded parts with drafted walls, and FTC-11 is a ring with conical faces. The prototype only understands flat faces and cylinders. On FTC-07, 90 of the faces are neither, and almost nothing can be cut.</li>
+<li><strong>Two rebuilds failed in the geometry kernel.</strong> On FTC-06 the cut list is produced, but when we replay it, one ordinary round hole makes the kernel return an empty solid. CTC-04 stops with the same error. Unreliable Boolean operations are a known weakness of this kernel, and we haven't worked around it yet.</li>
+</ul>
+
+<p>So it isn't a replacement. The slicer passes three parts and the cell method passes two of those three. The useful reading is that they fail on different parts for different reasons: the slicer on awkward outlines, the cells on surfaces that aren't flat or round.</p>
+
+<h2>What's next</h2>
+<ul>
+<li>Run both and keep whichever passes, or whichever is shorter when both do.</li>
+<li>Teach the cell method cones and drafted walls, which is most of what it's missing.</li>
+<li>Replay cuts in a way that survives the kernel's Boolean failures.</li>
+<li>Turn "stock minus cuts" back into design terms: a hub as a boss, four holes as one pattern.</li>
+</ul>
+
+<h2>Who did what</h2>
+<p>We chose the direction and pushed on whether the comparison was fair. Claude wrote the prototype, found and fixed the bugs, and ran the measurements.</p>
+
+<p>The code is <code>cell_recognize.py</code> in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>; <code>paper/figures/cells_corpus.py</code> reruns the table. It's a prototype and not yet wired into the main recogniser. Got a part that should come back as an editable tree? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
