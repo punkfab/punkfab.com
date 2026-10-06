@@ -24,6 +24,11 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
+      <span class="date">2026-10-05</span>
+      <a class="title" href="/blog/tracemaker-router/">A two-day-old router beat ours. We plugged it in.</a>
+      <p>TraceMaker, a new open-source autorouter built largely by coding agents, finished 99%, 100% and 90% of PCBWorld's real boards clean on our machine, against our 78%, 70% and 20%. We added it and an older Freerouting as backends and now match it. Then we took the parts off the boards: its placer gets half of them clean, ours one in ten, and the designers' placements all of them. What it did right, what we were missing, and a new corpus of 235 boards with their own rules.</p>
+    </li>
+    <li>
       <span class="date">2026-10-04</span>
       <a class="title" href="/blog/flexisette-reroute/">Re-routing flexisette: ten open nets to zero, by routing the real board</a>
       <p>The cassette-shaped ESP32 board we shipped in June had 10 connections open and 5 DRC errors after days of work. Re-run unattended next to the original, it has none, in six seconds of routing. The router now gets the placed KiCad board itself: KiCad's exporter had been refusing tscircuit boards over one footprint with no reference. The three leftover items turned out to be placement questions.</p>

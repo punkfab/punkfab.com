@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A two-day-old router beat ours. We plugged it in. — PUNKFAB log</title>
+<meta name="description" content="TraceMaker, a new open-source PCB autorouter, finished 99% of PCBWorld's small real boards clean, 100% of the medium ones and 90% of the large ones on our machine, against our 78, 70 and 20. We added it and an older Freerouting as backends and now match it. Then we unplaced the boards: no automatic placer, its or ours, comes close to the designer's placement." />
+<link rel="canonical" href="https://punkfab.com/blog/tracemaker-router/" />
+<meta name="author" content="PUNKFAB" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/tracemaker-router/" />
+<meta property="og:title" content="A two-day-old router beat ours. We plugged it in." />
+<meta property="og:description" content="TraceMaker finished 0.99 / 1.00 / 0.90 of PCBWorld's real boards clean, against our 0.78 / 0.70 / 0.20. As a backend it lifts us to 1.00 / 1.00 / 0.90. Placement is still unsolved: 0.50 for its placer, 0.10 for ours." />
+<meta property="og:image" content="https://punkfab.com/blog/tracemaker-router/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/tracemaker-router/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="Bar charts of clean-pass rate on PCBWorld D3 medium and large boards: designer 1.00 and 0.90, circuit-skills best of backends 1.00 and 0.90, TraceMaker 1.00 and 0.90, Freerouting 2.1.0 0.80 and 0.30, Freerouting 2.2.4 0.60 and 0.30, tscircuit capacity autorouter 0.00 and 0.00, circuit-skills a day earlier 0.70 and 0.20." />
+<meta property="article:published_time" content="2026-10-05T23:30:00Z" />
+<meta property="article:author" content="PUNKFAB" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="A two-day-old router beat ours. We plugged it in." />
+<meta name="twitter:description" content="TraceMaker finished 0.99 / 1.00 / 0.90 of PCBWorld's real boards clean, against our 0.78 / 0.70 / 0.20. As a backend it lifts us to 1.00 / 1.00 / 0.90. Placement is still unsolved: 0.50 for its placer, 0.10 for ours." />
+<meta name="twitter:image" content="https://punkfab.com/blog/tracemaker-router/card.jpg" />
+<meta name="twitter:image:alt" content="Clean-pass bar charts: circuit-skills, TraceMaker, two Freerouting versions and the tscircuit router on real boards." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">pcb · routing · placement · evals</p>
+  <h1>A two-day-old router beat ours. We plugged it in.</h1>
+  <p class="meta">2026-10-05 · Dan Newcome</p>
+  <article class="post">
+<p><strong><a href="/blog/pcbworld-evals/">Yesterday</a> we scored our routers on 119 real boards and called 78% on the small ones close to the state of the art. Today a router that is two days old beat that by a wide margin, on our machine, with our judge.</strong> <a href="https://github.com/DingoOz/TraceMaker">TraceMaker</a> is a new open-source autorouter for KiCad, written in C++ with CUDA, built largely by coding agents. We ran it on the same boards.</p>
+<ul>
+<li>TraceMaker finished <strong>99%</strong> of the small boards clean, <strong>100%</strong> of the medium ones and <strong>90%</strong> of the large ones. Ours finished 78%, 70% and 20%.</li>
+<li>We added it as a backend, along with an older Freerouting. Our best-of row is now <strong>100%, 100% and 90%</strong>.</li>
+<li>Then we took the parts off the boards. With placement to do as well, its placer gets <strong>50%</strong> of the medium boards clean and ours gets <strong>10%</strong>. The designers' placements get 100%.</li>
+</ul>
+<p><img loading="lazy" src="scores.jpg" alt="Three bar charts of clean-pass rate, for 99 small, 10 medium and 10 large boards. Designer's own routing 1.00, 1.00, 0.90. circuit-skills best of backends 1.00, 1.00, 0.90. TraceMaker 0.99, 1.00, 0.90. Freerouting 2.1.0 0.87, 0.80, 0.30. Freerouting 2.2.4 0.73, 0.60, 0.30. tscircuit capacity autorouter 0.21, 0.00, 0.00. circuit-skills a day earlier 0.78, 0.70, 0.20."></p>
+
+<h2>01 / The comparison</h2>
+<p>The benchmark is the one from yesterday's post: <a href="https://github.com/LGAI-Research/PCBWorld">PCBWorld</a>'s D3 set of real open-source boards. Each board keeps its designer's placement and has its routing stripped. A result counts as a <strong>clean pass</strong> only if it comes back fully connected with zero error-level KiCad DRC violations under the board's own rules.</p>
+<p>TraceMaker built from source in 22 seconds. Its CUDA build targets its author's two older Tesla cards; one CMake setting retargets it to an RTX 4070. The GPU only speeds up its cost fields: on the board we checked, GPU and CPU builds wrote byte-identical files. Every run below used its default 8-variant portfolio with a 60-second limit, and was scored by the same stock KiCad 9 DRC as our own backends.</p>
+<div class="table-wrap"><table>
+<tr><th>Split</th><th>TraceMaker</th><th>circuit-skills, a day earlier</th><th>Freerouting 2.2.4</th></tr>
+<tr><td>D3-A, 99 small</td><td><strong>0.99</strong></td><td>0.78</td><td>0.75</td></tr>
+<tr><td>D3-B, 10 medium</td><td><strong>1.00</strong></td><td>0.70</td><td>0.70</td></tr>
+<tr><td>D3-C, 10 large</td><td><strong>0.90</strong></td><td>0.20</td><td>0.20</td></tr>
+</table></div>
+<p>Board by board, it was clean on 32 boards where we were not. We were clean on one where it was not, a pogo-pin adapter where it reported three pins boxed in. It added <strong>zero DRC errors on all 119 boards</strong>, including the ones it did not finish. On small boards it was also faster: a median of 0.6 seconds against our 5.9. On boards both routed clean, its tracks were 5–7% shorter, with about twice the vias on the larger boards.</p>
+<p>One caution about these numbers. PCBWorld's boards come from PCBench, which is the set TraceMaker was developed against, so some of them may be boards it was tuned on. Its own held-out figure, on 60 harder boards, is 73–78% clean.</p>
+
+<h2>02 / Why it wins</h2>
+<p>This benchmark hands every router a finished placement, so none of our placement work gets used. What is left is pure routing, and there we were only as good as the two routers we wrap. Both lose for plain reasons:</p>
+<ul>
+<li><strong>Freerouting 2.2.4 stops early.</strong> It quits once a pass leaves the board unchanged. Every board we failed yesterday was 1 to 5 connections from done.</li>
+<li><strong>The tscircuit router, through our bridge, doesn't route to KiCad's rules.</strong> It connects 98–100% of everything and leaves about ten clearance and width errors per small board. The most common is a track too close to a through-hole pad. Some of that may be our KiCad adapter and not the router; we have not separated the two.</li>
+<li><strong>Freerouting sees a translation.</strong> The board is exported to Specctra format, routed, and imported back. Rules are lost on the way.</li>
+</ul>
+<p>TraceMaker avoids all three. It reads the KiCad board and rules directly. It checks every segment against exact geometry before it commits it. And when a connection is blocked it rips up and renegotiates. On the medium board we looked at closely, all eight of its variants routed every connection in a single pass with no rip-ups at all. These boards are not hard for a correct router. Ours were fumbling them.</p>
+
+<h2>03 / How a two-day-old project got here</h2>
+<p>Nothing in TraceMaker is a new algorithm. Its repository is worth reading for how the work was set up:</p>
+<ul>
+<li><strong>A score a machine can check, from the first day.</strong> 1,157 real boards, judged by KiCad's own DRC, with Freerouting's published per-board results as the bar. A regression tier runs before any routing change lands. An agent can improve against that overnight with nobody watching, and the repository has the overnight reports.</li>
+<li><strong>Design before code.</strong> Fifteen design documents and a decision log of 52 entries. Every algorithm is a published one, cited where it is defined.</li>
+<li><strong>Rules that make generated code safe to trust.</strong> No copper without the exact check. Every fast path has a slow reference path and a test that the two agree. Output is deterministic.</li>
+<li><strong>It matches the judge.</strong> It has its own DRC, tested for parity with KiCad's, so what the router thinks is legal is what the judge thinks is legal.</li>
+</ul>
+<p>And the incumbent was weaker than its age suggests. That is the part we got wrong yesterday: we measured ourselves against Freerouting and called the result close to the state of the art.</p>
+
+<h2>04 / So we plugged it in</h2>
+<p>Our harness, <code>route_eval</code>, runs every available router on a board, scores each result the same way and keeps the best. Adding a router is one branch. We added two: <code>tracemaker</code>, and <code>freerouting:2.1.0</code>, the older Freerouting release that keeps optimizing where 2.2.4 stops.</p>
+<div class="table-wrap"><table>
+<tr><th>Split</th><th>Best of all backends</th><th>TraceMaker</th><th>Freerouting 2.1.0</th><th>Freerouting 2.2.4</th><th>tscircuit</th></tr>
+<tr><td>D3-A, 99 small</td><td><strong>1.00</strong></td><td>0.99</td><td>0.87</td><td>0.73</td><td>0.21</td></tr>
+<tr><td>D3-B, 10 medium</td><td><strong>1.00</strong></td><td>1.00</td><td>0.80</td><td>0.60</td><td>0.00</td></tr>
+<tr><td>D3-C, 10 large</td><td><strong>0.90</strong></td><td>0.90</td><td>0.30</td><td>0.30</td><td>0.00</td></tr>
+</table></div>
+<p>The tenth large board is the one its own designer left incomplete, so 0.90 is the ceiling there.</p>
+<p><strong>The routers are not redundant.</strong> On the small boards the kept candidate came from TraceMaker 63 times, Freerouting 2.1.0 19 times, Freerouting 2.2.4 13 times and the tscircuit router 4 times. The one board TraceMaker could not finish, another router did. Running several and keeping the best is still the right shape; it just needed a better router in it.</p>
+<p>The cost is time. The full pass on a small board went from 7 seconds to 13, and on the large boards it now takes minutes, because every router that cannot finish runs out its clock.</p>
+
+<h2>05 / Take the parts off</h2>
+<p>All of that is routing on a placement a person made. The harder question is the one before it. We took the ten medium boards, stripped the routing, pulled every part that carries a net off its position, and asked a placer to put them back. Then we routed the result with three routers and kept the best.</p>
+<p><img loading="lazy" src="placement.jpg" alt="Two bar charts for ten medium boards placed from scratch. Clean pass: designer's placement 1.00, TraceMaker's placer 0.50, our annealer and untangle at part level 0.10, TraceMaker's placer with the tscircuit router 0.00. Connections routed: designer 1.00, TraceMaker's placer 0.85, ours 0.94, TraceMaker's placer with the tscircuit router 0.60."></p>
+<ul>
+<li><strong>TraceMaker's placer: 5 of 10 clean.</strong> It is a separate program from the router and did not run in the routing benchmark above. On five boards its placement already had KiCad DRC errors before any routing, and on the two we opened, a pad sat off the board edge while the placer reported the result as legal.</li>
+<li><strong>Ours: 1 of 10 clean.</strong> We ran our own placement heuristics, a simulated-annealing placer and a rotation pass, on single parts. Its placements let the routers connect more (94% of connections against 85%), but nine of ten failed DRC before routing. The adapter treats parts and the board as boxes and has no step that makes the result legal. It is also a harsh test: our heuristics are written to arrange a handful of subcircuit blocks in a code-defined design, not 20 loose parts.</li>
+<li><strong>TraceMaker's placer with the tscircuit router: 0 of 10.</strong> We tried this pairing because it sounded plausible. It pairs the weaker half of each.</li>
+</ul>
+<p>Ten boards is a small sample. The gap to the designers is not small: every one of their placements routes clean.</p>
+
+<h2>06 / What we were missing</h2>
+<ol>
+<li><strong>We don't own a legality model.</strong> We connect routers through adapters that lose rules, and find out from KiCad afterwards.</li>
+<li><strong>Our benchmark is two days old and gates nothing.</strong> We run it by hand. TraceMaker's gated every change from its first commit.</li>
+<li><strong>We optimise a proxy.</strong> Our placement score predicts whether a board will route only a little better than a coin: it gets the ordering right 48–66% of the time. TraceMaker's loop optimises the real outcome.</li>
+<li><strong>We have no legal placer for a bare KiCad board.</strong></li>
+</ol>
+<p>We are not going to write a router. TraceMaker is a better one than we would build, it is GPL-3.0, and it now runs inside our harness as a separate program. What we take from it is the method, pointed at the part nobody is good at yet: placement, and the loop between placement and routing. Half of TraceMaker's failed placements fail on a handful of boxed-in pins, the kind a small local move would free.</p>
+
+<h2>07 / A corpus with real rules</h2>
+<p>PCBench's boards are KiCad 5 files with no project file, so every one is judged against KiCad's default rules. For placement work we want current designs with their own rules, so we started a second corpus from GitHub. It has 235 boards from 170 repositories under open-hardware and permissive licences, each pinned to a commit, with its licence recorded. 178 are two-layer and 57 four-layer.</p>
+<p>A board qualifies if it opens in KiCad 9, has a project file beside it, and its designer's routing leaves nothing open. Only <strong>77 of the 235</strong> have zero DRC errors as their designers shipped them, so those 77 are the set where a clean pass is a fair bar. The collector and the manifest are in the repository; the boards themselves are downloaded, not redistributed.</p>
+
+<h2>08 / Caveats</h2>
+<ul>
+<li>One run per router, on one machine. The benchmark's own paper keeps the best of five.</li>
+<li>TraceMaker is two days old, and this benchmark overlaps the set it was developed on.</li>
+<li>By its author's notes it stalls on large boards: 999 of 1,188 connections on one, barely improving with five times the budget.</li>
+<li>The placement comparison is ten boards, and our side of it is an adapter written today.</li>
+<li>Our harness scored TraceMaker's partial routes as failures until we caught it. Clean-pass rates were never affected, and the placement runs were redone.</li>
+</ul>
+<p>Everything is in <a href="https://github.com/punkfab/circuit-skills">punkfab/circuit-skills</a>: the two new backends in <code>route_eval</code>, a runner that scores any external router beside a stored run, the unplaced-board harness, the corpus collector and every result. Thanks to TraceMaker's author for publishing something this easy to build and check. Have a board that needs placing or routing? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
