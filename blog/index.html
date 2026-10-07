@@ -24,11 +24,6 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
-      <span class="date">2026-10-05</span>
-      <a class="title" href="/blog/placement-hints/">Placement hints: telling the placer roughly where things go</a>
-      <p>A small text language, modelled on reladraw, for saying roughly where parts go on a PCB: on this edge, right of that chip, near this pin. Wired into our placer as soft constraints and measured on 52 real boards, the hints are followed (80–85% met) and put the big parts twice as close to the designer's floorplan. Boards that route clean go from 15% to 21%; the designers get 63%. What limits it is placement legality, not the floorplan.</p>
-    </li>
-    <li>
       <span class="date">2026-10-07</span>
       <a class="title" href="/blog/scan-to-cad-hexagon/">A scan-to-CAD test part, and when a hexagon is regular</a>
       <p>An article tested Backflip AI on a scanned flanged bushing and reported a hexagon with unequal flats. We ran the shared mesh through a small slicing tool of ours. The scan's flats measure 39.98, 40.10 and 40.03 mm; the tool decides that is one regular hexagon and writes a single 40 mm feature, in an eight-feature tree that overlaps the scan by 97.8%. It only handles round stepped parts, and the FreeCAD sketch is still six unconstrained lines.</p>
@@ -37,6 +32,11 @@
       <span class="date">2026-10-06</span>
       <a class="title" href="/blog/featuretree-cells/">Recognising CAD features by cutting the stock into cells</a>
       <p>A second way to recover a feature tree from a STEP file: split the bounding box with the part's own surfaces, then merge the empty cells into cuts. It recovers a flange coupling exactly, passes two of eleven NIST parts with about half the features our slicer needs, gets closer on four more, and fails on drafted and conical parts.</p>
+    </li>
+    <li>
+      <span class="date">2026-10-05</span>
+      <a class="title" href="/blog/placement-hints/">Placement hints: telling the placer roughly where things go</a>
+      <p>A small text language, modelled on reladraw, for saying roughly where parts go on a PCB: on this edge, right of that chip, near this pin. Wired into our placer as soft constraints and measured on 52 real boards, the hints are followed (80–85% met) and put the big parts twice as close to the designer's floorplan. Boards that route clean go from 15% to 21%; the designers get 63%. What limits it is placement legality, not the floorplan.</p>
     </li>
     <li>
       <span class="date">2026-10-05</span>
