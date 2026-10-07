@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A scan-to-CAD test part, and when a hexagon is regular — PUNKFAB log</title>
+<meta name="description" content="An article tested Backflip AI on a scanned flanged bushing and reported a hexagon with unequal flats. We ran the same mesh through a small slicing tool of ours: it reads the three flat pairs as 39.98, 40.10 and 40.03 mm, decides that is one regular hexagon, and writes it as a single 40 mm feature. It only handles round stepped parts." />
+<link rel="canonical" href="https://punkfab.com/blog/scan-to-cad-hexagon/" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/scan-to-cad-hexagon/" />
+<meta property="og:title" content="A scan-to-CAD test part, and when a hexagon is regular" />
+<meta property="og:description" content="An article tested Backflip AI on a scanned flanged bushing and reported a hexagon with unequal flats. We ran the same mesh through a small slicing tool of ours: it reads the three flat pairs as 39.98, 40.10 and 40.03 mm, decides that is one regular hexagon, and writes it as a single 40 mm feature. It only handles round stepped parts." />
+<meta property="og:image" content="https://punkfab.com/blog/scan-to-cad-hexagon/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/scan-to-cad-hexagon/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="FreeCAD showing a flanged bushing with a hexagonal bore and four bolt holes, and a model tree listing step1, step2, bolt_holes and bore." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="A scan-to-CAD test part, and when a hexagon is regular" />
+<meta name="twitter:description" content="An article tested Backflip AI on a scanned flanged bushing and reported a hexagon with unequal flats. We ran the same mesh through a small slicing tool of ours: it reads the three flat pairs as 39.98, 40.10 and 40.03 mm, decides that is one regular hexagon, and writes it as a single 40 mm feature. It only handles round stepped parts." />
+<meta name="twitter:image" content="https://punkfab.com/blog/scan-to-cad-hexagon/card.jpg" />
+<meta name="twitter:image:alt" content="FreeCAD showing a flanged bushing with a hexagonal bore and four bolt holes, and a model tree listing step1, step2, bolt_holes and bore." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">experiment · featuretree</p>
+  <h1>A scan-to-CAD test part, and when a hexagon is regular</h1>
+  <p class="meta">2026-10-07 · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · <code>mesh_compare.py</code>, <code>image_recognize.py</code></p>
+  <article class="post">
+
+<p>Mario Martinez published <a href="https://www.linkedin.com/pulse/backflip-ai-scan-to-cad-when-marketing-promise-meets-real-martinez-j2wze/">a test of Backflip AI's scan-to-CAD</a> on 5 October. The part is a flanged bushing with a hexagonal bore, chosen because it is simple: the hexagon needs a sketch and an extrusion. The article reports that Backflip returned an editable model in both of its modes, but that the hexagon's flats did not come out equal, and it makes the point that a hexagon drawn as six editable lines is parametric without being correct.</p>
+
+<p>The article shares the scan, so we ran it through our own tools. We have not run Backflip. Every Backflip number below is the article's.</p>
+
+<h2>What the scan says</h2>
+
+<p>The mesh is about 700,000 triangles, 100 mm across and 120 mm tall. We slice it across its axis and fit a straight line to the middle of each side of the bore. At mid-height the three pairs of opposite flats are 39.98, 40.10 and 40.03 mm apart. Over eight heights they stay between 39.96 and 40.21 mm, and the sides turn within half a degree of 60°. The corners are slightly soft: 45.7 mm across, where sharp corners would give 46.2.</p>
+
+<p><img loading="lazy" alt="Dot chart of hexagon size across flats in millimetres, one dot per pair of opposite flats. The scan: 39.977, 40.103, 40.029. Our tree: 40, 40, 40. Backflip Fast mode as reported: 39.75, 39.88, 39.75. Backflip Thinking mode as reported: 40, 40.5, 40. Human reconstruction as reported: 40.7." src="hex-flats.png" /></p>
+
+<p>So the scan itself is not a perfect hexagon. Its flats differ by 0.13 mm at that height and by a little over 0.2 mm at others. Any tool that copies what it measures will produce three different numbers. The article reports about 39.75, 39.88 and 39.75 mm from Backflip's Fast mode and about 40, 40.5 and 40 mm from its Thinking mode.</p>
+
+<h2>Regular is a decision</h2>
+
+<p>A regular hexagon cannot be measured out of a scan. Someone has to decide that the designer meant one, and then describe it with a single size. Our tool makes that decision with a stated rule: if the flat pairs agree within 0.3 mm and the sides are within 1° of evenly turned, the hole is a regular polygon. It then writes one feature with one number, the mean across flats, rounded to the nearest half millimetre when the scan is within 0.3 mm of it. Here that is a hexagon 40.0 mm across flats. If the rule fails, the tool says the hole is not regular and leaves it out; it does not emit six lines.</p>
+
+<p>The same idea covers the rest of the part. Four holes at one radius and 90° apart become one bolt circle with one diameter. One of the four scanned badly, as an irregular 7.8 mm hole; it takes the pattern's 10 mm, and the output says so.</p>
+
+<p><img loading="lazy" alt="FreeCAD showing the rebuilt flanged bushing with a hexagonal bore and four bolt holes. The model tree on the left lists step1, step2, bolt_holes and bore." src="freecad-tree.png" /></p>
+
+<h2>The tree</h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Feature</th><th>Scan</th><th>Tree</th></tr></thead>
+<tbody>
+<tr><td>Flange, diameter × height</td><td>99.67 × 30.0</td><td>99.5 × 30</td></tr>
+<tr><td>Boss, diameter × height</td><td>69.76 × 90</td><td>70 × 90</td></tr>
+<tr><td>Hexagonal bore, across flats</td><td>39.98, 40.10, 40.03</td><td>40, through</td></tr>
+<tr><td>Bolt holes</td><td>three near 9.9, one 7.8; on an 84.9 circle</td><td>4 × 10 on an 85 circle</td></tr>
+</tbody>
+</table></div>
+
+<p>That is eight features: two sketches and pads, and two sketches and through pockets. Rebuilt and sliced the same way, the tree overlaps the scan by 97.8% of their combined volume, and its volume is 0.18% under. The run takes about 20 seconds. FreeCAD builds the same tree natively, to the same volume as our reference build.</p>
+
+<p>The missing 2% is mostly the scan. Its boss sits about 0.35 mm off the flange's axis, and the insides of the bolt holes are poorly captured. The tree assumes one straight axis.</p>
+
+<h2>What this does not show</h2>
+
+<ul>
+<li>It is one part, and the easiest kind for this tool. It only handles round steps stacked along the mesh's Z axis with through holes. Backflip takes arbitrary scans. This is a comparison on one point, the hexagon, and not of the two tools.</li>
+<li>The flange diameter shows the weakness of rounding. The scan reads 99.67 mm, the tool wrote 99.5, and a person would probably type 100.</li>
+<li>In our IR the hexagon is one feature with one size. In the FreeCAD sketch it is still six lines with exact coordinates and no constraints, so dragging one in FreeCAD would break it. The article's remark about six editable lines applies to that file too.</li>
+<li>The article gives a human reconstruction of 40.70 mm, a regular hexagon 47 mm across corners. Our line fits on the shared mesh give 40.0 to 40.2 mm. We do not know the reason for the difference. It may be a different measuring convention or an allowance we have not applied.</li>
+<li>We looked for chamfers. The rims lose about a quarter of a millimetre at the very edge, which is scan softness, so the tree has none.</li>
+</ul>
+
+<h2>From a picture</h2>
+
+<p>We also tried the harder input: a single screenshot of the scan, with no mesh. A vision model proposes the tree, the tool rebuilds it and fits its outline to the picture. The hexagon comes out regular because the model is asked for a polygon feature, but its size is an estimate: 41.3 mm across flats against the scan's 40, with the overall size taken from the mesh. The result is marked rough, and the mesh is what showed by how much.</p>
+
+<h2>What's next</h2>
+
+<p>Constraints in the emitted sketches, so a regular polygon stays regular when edited in CAD. A better rule than rounding for nominal sizes. Parts that are not round steps, which is where the existing STEP recognisers would have to take over from slicing.</p>
+
+<h2>Who did what</h2>
+<p>We picked the test and asked whether the hexagon and the chamfers were right. Claude wrote the tools and ran the measurements. The test part and the Backflip results are Mario Martinez's.</p>
+
+<p>The code is <code>mesh_compare.py</code> and <code>image_recognize.py</code> in <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>. Both are prototypes. Got a scan that should come back as an editable tree? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
