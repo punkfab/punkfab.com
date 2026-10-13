@@ -24,6 +24,11 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
+      <span class="date">2026-10-13</span>
+      <a class="title" href="/blog/second-kernel/">A second CAD kernel is a second test oracle</a>
+      <p>NVIDIA open-sourced the SMLib solid modelling kernel last week. We wired it into our small SCAD-to-STEP interpreter beside OpenCASCADE, not to replace it but to check it: two kernels that share no code must agree on every part. They do, on all sixteen of our parts and on every OpenSCAD test file both can run. Getting there found one sign convention, one silent boolean failure and one segfault, each by disagreement rather than by reading code.</p>
+    </li>
+    <li>
       <span class="date">2026-10-12</span>
       <a class="title" href="/blog/cadfather-nist/">CADFather on the NIST test parts, scored next to featuretree</a>
       <p>We ran CADFather, a new open-source agent that rebuilds CAD programs from meshes, on the eleven NIST test parts we use for featuretree, and scored both tools' outputs with CADFather's own metric code. CADFather returned a valid solid for all eleven, at a mean overlap of 0.839. featuretree is at 0.977 on nine, and fails the metric's closed-mesh rule on the other two. The two tools start from different inputs and write very different amounts of tree.</p>

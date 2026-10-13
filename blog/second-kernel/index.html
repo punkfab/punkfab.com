@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A second CAD kernel is a second test oracle — PUNKFAB log</title>
+<meta name="description" content="NVIDIA open-sourced the SMLib solid modelling kernel last week. We wired it into our small SCAD-to-STEP interpreter beside OpenCASCADE, not to replace it but to check it: two kernels that share no code must agree on every part. They do, on all sixteen of our parts and on every OpenSCAD test file both can run. Getting there found one sign convention, one silent boolean failure and one segfault, each by disagreement rather than by reading code." />
+<link rel="canonical" href="https://punkfab.com/blog/second-kernel/" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/second-kernel/" />
+<meta property="og:title" content="A second CAD kernel is a second test oracle" />
+<meta property="og:description" content="NVIDIA open-sourced the SMLib solid modelling kernel last week. We wired it into our small SCAD-to-STEP interpreter beside OpenCASCADE, not to replace it but to check it: two kernels that share no code must agree on every part. They do, on all sixteen of our parts and on every OpenSCAD test file both can run. Getting there found one sign convention, one silent boolean failure and one segfault, each by disagreement rather than by reading code." />
+<meta property="og:image" content="https://punkfab.com/blog/second-kernel/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/second-kernel/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="The same pipe flange twice, built by OpenCASCADE on the left and by SMLib on the right. Both show the base disk, four bolt holes, the bored riser and the concave weld fillet at the junction." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="A second CAD kernel is a second test oracle" />
+<meta name="twitter:description" content="NVIDIA open-sourced the SMLib solid modelling kernel last week. We wired it into our small SCAD-to-STEP interpreter beside OpenCASCADE, not to replace it but to check it: two kernels that share no code must agree on every part. They do, on all sixteen of our parts and on every OpenSCAD test file both can run. Getting there found one sign convention, one silent boolean failure and one segfault, each by disagreement rather than by reading code." />
+<meta name="twitter:image" content="https://punkfab.com/blog/second-kernel/card.jpg" />
+<meta name="twitter:image:alt" content="The same pipe flange twice, built by OpenCASCADE on the left and by SMLib on the right. Both show the base disk, four bolt holes, the bored riser and the concave weld fillet at the junction." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">verification · oscad</p>
+  <h1>A second CAD kernel is a second test oracle</h1>
+  <p class="meta">2026-10-13 · <a href="https://github.com/punkfab/openscad-occt">punkfab/openscad-occt</a> (MIT) · <a href="https://github.com/NVIDIA-Omniverse/usd-brep">NVIDIA-Omniverse/usd-brep</a> (Apache-2.0)</p>
+  <article class="post">
+
+<p>On 8 October NVIDIA published <a href="https://github.com/NVIDIA-Omniverse/usd-brep">usd-brep</a>, which is SMLib: the NURBS solid modelling kernel that Solid Modeling Solutions sold for twenty-five years, about a million lines of C++, now under the Apache 2.0 licence. Until last week there was exactly one open kernel with production booleans and fillets, OpenCASCADE. Now there are two.</p>
+
+<p>We have a small interpreter, <a href="https://github.com/punkfab/openscad-occt">oscad</a>, that reads OpenSCAD-style code and builds the part on OpenCASCADE instead of a mesh library, so the output is an exact STEP solid rather than triangles. The obvious question was whether to switch it to SMLib. We did not. We added SMLib beside OpenCASCADE and made the interpreter run on either, because a second kernel is worth more as a check than as a replacement.</p>
+
+<h2>Why a second kernel is a test</h2>
+
+<p>Boundary-representation booleans fail in two ways. One is loud: the operation reports an error and you get nothing. The other is quiet: it reports success and hands back a solid with a face missing, a sliver added, or an operand dropped. The quiet kind is the one that reaches the machine shop.</p>
+
+<p>With one kernel the only outside check we had was OpenSCAD itself, whose output is a mesh. We compare bounding boxes against it across its own test corpus, and that catches gross errors. It cannot catch a fillet applied to the wrong edges, because the bounding box does not move.</p>
+
+<p>Two kernels that share no code are a sharper instrument. Build the same part on both, compare bounding box and volume, and any disagreement is a finding: a bug in one kernel, a bug in our code on one side, or a difference in what an operation means. Agreement to a few parts per million is strong evidence that neither is quietly wrong, because two independent implementations would have to be wrong in the same way.</p>
+
+<p><img loading="lazy" alt="Four renders in two rows. Top row: a pipe flange, a flat disk with four bolt holes and a bored riser joined by a concave weld fillet, built by OpenCASCADE on the left and SMLib on the right. Bottom row: a square post mount with a central bored post and four corner holes, again OpenCASCADE on the left and SMLib on the right. Each pair is indistinguishable." src="kernels.png" /></p>
+
+<p>The flange is a disk and a tube joined by a concave fillet, with five bores subtracted. The post mount is a plate with a post seated on it by a face-to-face datum query, then a weld fillet. Each row is the same source file built by the two kernels. The volumes agree to within 0.004% at this mesh resolution, and to 0.001% when the meshes are made finer.</p>
+
+<h2>What we built</h2>
+
+<ul>
+<li><strong>A standalone build of the kernel.</strong> usd-brep ships with NVIDIA's Omniverse build system and pulls in OpenUSD. The kernel itself and its C-style wrapper need neither. A forty-line CMake file compiles them from the checkout with TBB as the only dependency. It takes about seven minutes.</li>
+<li><strong>A bridge to STEP.</strong> SMLib has no STEP writer. We walk its topology, carry every surface and curve across as exact NURBS with SMLib's own shared vertices and edges, and let OpenCASCADE write the STEP file. About four hundred lines. On a plate with sixteen holes the volume before and after the bridge agrees to three parts per million.</li>
+<li><strong>A kernel seam in the interpreter.</strong> The language front end already produced a plain data tree. That tree is now handed to a backend, OpenCASCADE by default or SMLib with a flag, and nothing above the seam knows which. The OpenCASCADE path moved behind the seam with no change in behaviour: the corpus gate reads the same before and after.</li>
+<li><strong>The SMLib backend.</strong> Primitives, 2D profiles and extrudes, transforms, booleans, fillets with convex and concave edge selection, and the datum-frame <code>attach()</code> operation, which ported in about eighty lines because it is a pure query over faces.</li>
+<li><strong>A two-kernel differential.</strong> One script runs every sample through both kernels and compares bounding box and mesh volume. The existing OpenSCAD corpus gate takes a kernel name and runs unchanged on either.</li>
+</ul>
+
+<h2>Results</h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Check</th><th>OpenCASCADE</th><th>SMLib</th></tr></thead>
+<tbody>
+<tr><td>Our 16 sample and example parts, bbox and volume against the other kernel</td><td>16 of 16 agree</td><td>16 of 16 agree</td></tr>
+<tr><td>OpenSCAD test corpus, 139 files in scope, bbox against OpenSCAD</td><td>67 matched · 0 mismatched · 69 not supported</td><td>56 matched · 0 mismatched · 81 not supported</td></tr>
+<tr><td>STEP output passes OpenCASCADE's validity check</td><td>all</td><td>all</td></tr>
+</tbody>
+</table></div>
+
+<p>The twelve extra files SMLib cannot run are declared limits of our backend, not wrong answers: exporting a bare 2D shape, mixing 2D and 3D, mirroring a 2D profile, and two extrude options. Sixteen boolean subtractions on the plate example take about forty milliseconds in total on SMLib. We have not benchmarked the two kernels against each other beyond that.</p>
+
+<h2>What disagreement found</h2>
+
+<p>Three things turned up as the kernels disagreeing, not as anyone reading code.</p>
+
+<ul>
+<li><strong>A sign convention.</strong> To fillet only convex edges we ask the kernel for the angle between the two faces at each edge. SMLib measures that angle outside the material: a cube edge reads 270 degrees and a reentrant corner reads 90, the opposite of what we assumed. The bracket, the flange and the stepped block all came out with the wrong edges rounded, and the volume difference on the stepped block was the volume of exactly one concave fillet. That is what pointed at the classification rather than the fillet itself.</li>
+<li><strong>A silent boolean failure.</strong> One corpus file revolves a triangle whose edge lies on the axis, then unions it with a box whose face lies in the plane of that axis. SMLib reports success and returns the box alone, 540 cubic units where the union should be about 1,010. Move the box half a millimetre and it is correct. We did not try to work around the kernel. The backend now measures the result of every union against its larger operand and refuses to continue if volume went missing, so this file is reported as unsupported instead of exported wrong.</li>
+<li><strong>A crash.</strong> Asking SMLib to mesh a flat sheet body, which is how we would export a 2D-only drawing, dereferences a null pointer inside the kernel. The backend refuses 2D-only output with a message instead of segfaulting.</li>
+</ul>
+
+<p>The rest of the bugs were ours, in the bridge: parts made of several separate bodies, a torus that is a single face closed on itself, and intersection curves whose ends miss their vertices by a millionth. The corpus gate and the volume check found each of them within a minute of the change that caused it.</p>
+
+<h2>What this does not show</h2>
+
+<ul>
+<li>Sixteen parts of ours and 56 corpus files is a small sample. The corpus check is bounding box only; the volume check is on our sixteen.</li>
+<li>Agreement between two kernels says both are consistent with each other. It does not say either is right in places where both might fail the same way, for instance on faces that exactly coincide, which neither B-rep kernel handles gracefully.</li>
+<li>The STEP bridge writes every surface as a B-spline, including planes and cylinders. The files are exact and valid but a downstream CAD program will not recognise a cylinder as a cylinder. Mapping the analytic types across is the next step.</li>
+<li>A sphere with poles does not cross the bridge cleanly. We build spheres pole-free instead, which SMLib supports directly.</li>
+<li>This is one afternoon's work on a kernel that was public for five days. The upstream project's own known-issues list is honest and not short.</li>
+</ul>
+
+<h2>Why it matters to us</h2>
+
+<p>Our pipeline is define, simulate, verify, build. The verify step is only as good as the oracle. For geometry the oracle has been the kernel that made the geometry, which is circular. Two independent kernels break the circle for the class of errors that matter most, the ones that report success. From here on, any kernel-facing change to oscad runs through both, and a part we hand to a shop has been built twice.</p>
+
+<h2>What's next</h2>
+
+<p>Map planes, cylinders, cones, spheres and tori to their analytic STEP entities in the bridge. Carry SMLib's own trimming curves across instead of projecting, which removes the pole limitation. Add 2D booleans on the SMLib side. Report the silent-union case upstream with the reduced file.</p>
+
+<h2>Who did what</h2>
+<p>We decided to try SMLib and asked whether it should be a branch or a pluggable backend. Claude did the spike, the standalone build, the bridge, the backend, the comparison scripts and this write-up. The kernels are the work of their authors: Open Cascade SAS, and Solid Modeling Solutions and NVIDIA.</p>
+
+<p>The code is at <a href="https://github.com/punkfab/openscad-occt">punkfab/openscad-occt</a>; the spike, results and remaining gaps are in <a href="https://github.com/punkfab/openscad-occt/issues/2">issue #2</a>. Got a part that needs to be right the first time? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
