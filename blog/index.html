@@ -25,6 +25,11 @@
   <ul class="postlist">
     <li>
       <span class="date">2026-10-13</span>
+      <a class="title" href="/blog/featuretree-closed-bodies/">Fixing what the CADFather comparison found</a>
+      <p>Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.915. Three parts still have defects, which a new check now reports. Also: first results on samples of DeepCAD and Fusion360.</p>
+    </li>
+    <li>
+      <span class="date">2026-10-13</span>
       <a class="title" href="/blog/second-kernel/">A second CAD kernel is a second test oracle</a>
       <p>NVIDIA open-sourced the SMLib solid modelling kernel last week. We wired it into our small SCAD-to-STEP interpreter beside OpenCASCADE, not to replace it but to check it: two kernels that share no code must agree on every part. They do, on all sixteen of our parts and on every OpenSCAD test file both can run. Getting there found one sign convention, one silent boolean failure and one segfault, each by disagreement rather than by reading code.</p>
     </li>
