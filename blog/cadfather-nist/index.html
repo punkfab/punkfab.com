@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CADFather on the NIST test parts, scored next to featuretree — PUNKFAB log</title>
+<meta name="description" content="We ran CADFather, a new open-source agent that rebuilds CAD programs from meshes, on the eleven NIST test parts we use for featuretree, and scored both tools' outputs with CADFather's own metric code. CADFather returned a valid solid for all eleven, at a mean overlap of 0.839. featuretree is at 0.977 on nine, and fails the metric's closed-mesh rule on the other two. The two tools start from different inputs and write very different amounts of tree." />
+<link rel="canonical" href="https://punkfab.com/blog/cadfather-nist/" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/cadfather-nist/" />
+<meta property="og:title" content="CADFather on the NIST test parts, scored next to featuretree" />
+<meta property="og:description" content="We ran CADFather, a new open-source agent that rebuilds CAD programs from meshes, on the eleven NIST test parts we use for featuretree, and scored both tools' outputs with CADFather's own metric code. CADFather returned a valid solid for all eleven, at a mean overlap of 0.839. featuretree is at 0.977 on nine, and fails the metric's closed-mesh rule on the other two. The two tools start from different inputs and write very different amounts of tree." />
+<meta property="og:image" content="https://punkfab.com/blog/cadfather-nist/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/cadfather-nist/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="The NIST FTC-08 enclosure three times: the input in grey, CADFather's reconstruction in orange with the central pocket filled in, and featuretree's in blue." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="CADFather on the NIST test parts, scored next to featuretree" />
+<meta name="twitter:description" content="We ran CADFather, a new open-source agent that rebuilds CAD programs from meshes, on the eleven NIST test parts we use for featuretree, and scored both tools' outputs with CADFather's own metric code. CADFather returned a valid solid for all eleven, at a mean overlap of 0.839. featuretree is at 0.977 on nine, and fails the metric's closed-mesh rule on the other two. The two tools start from different inputs and write very different amounts of tree." />
+<meta name="twitter:image" content="https://punkfab.com/blog/cadfather-nist/card.jpg" />
+<meta name="twitter:image:alt" content="The NIST FTC-08 enclosure three times: the input in grey, CADFather's reconstruction in orange with the central pocket filled in, and featuretree's in blue." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">benchmark · featuretree</p>
+  <h1>CADFather on the NIST test parts, scored next to featuretree</h1>
+  <p class="meta">2026-10-12 · <a href="https://github.com/kulibinai/cadfather">kulibinai/cadfather</a> (MIT) · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT)</p>
+  <article class="post">
+
+<p><a href="https://arxiv.org/abs/2610.09127">CADFather</a> is a new open-source agent that reconstructs a CAD program from a 3D mesh. A language model looks at renders of the target and of its best attempts so far, and each turn picks a tool: a learned generator that proposes the next operation, an algorithmic fitter, or a numerical optimiser for the parameters. The output is CadQuery code. The paper evaluates it on DeepCAD, Fusion360 and other benchmark sets.</p>
+
+<p>We ran it on the eleven NIST test parts we have been using for <a href="/blog/featuretree-nist-results/">featuretree</a>, and then scored both tools' outputs with the same code. These parts are not in CADFather's paper, and they are more complex than most of what it was evaluated on.</p>
+
+<h2>The two tools are not doing the same job</h2>
+
+<p>CADFather starts from a mesh and writes at most twelve operations. featuretree starts from the STEP solid, with its exact faces and edges, and writes as many features as it needs. Starting from a mesh is the harder problem. So this is not a ranking. It is a look at what each approach returns on the same eleven parts.</p>
+
+<h2>Results</h2>
+
+<p><img loading="lazy" alt="Dot chart of volume overlap with the input for eleven NIST parts, CADFather in orange and featuretree in blue. CADFather ranges from 0.575 on FTC-08 to 0.995 on FTC-09. featuretree ranges from 0.943 to 0.999 on nine parts; on CTC-02 and CTC-05 its mesh is not closed and a hollow marker shows its own B-rep measure, 0.935 and 0.972." src="iou.png" /></p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Part</th><th>CADFather: operations</th><th>IoU</th><th>GMS</th><th>Score</th><th>featuretree: features</th><th>IoU</th><th>GMS</th><th>Score</th></tr></thead>
+<tbody>
+<tr><td style="white-space:nowrap">CTC-01</td><td>7</td><td>0.876</td><td>0.660</td><td>0.768</td><td>54</td><td>0.999</td><td>0.958</td><td>0.978</td></tr>
+<tr><td style="white-space:nowrap">CTC-02</td><td>11</td><td>0.764</td><td>0.721</td><td>0.743</td><td>144</td><td colspan="3">mesh not closed</td></tr>
+<tr><td style="white-space:nowrap">CTC-03</td><td>7</td><td>0.605</td><td>0.902</td><td>0.754</td><td>64</td><td>0.943</td><td>0.914</td><td>0.929</td></tr>
+<tr><td style="white-space:nowrap">CTC-04</td><td>9</td><td>0.804</td><td>0.663</td><td>0.734</td><td>108</td><td>0.965</td><td>0.784</td><td>0.874</td></tr>
+<tr><td style="white-space:nowrap">CTC-05</td><td>9</td><td>0.923</td><td>0.854</td><td>0.889</td><td>57</td><td colspan="3">mesh not closed</td></tr>
+<tr><td style="white-space:nowrap">FTC-06</td><td>12</td><td>0.957</td><td>0.852</td><td>0.904</td><td>31</td><td>0.980</td><td>0.774</td><td>0.877</td></tr>
+<tr><td style="white-space:nowrap">FTC-07</td><td>10</td><td>0.851</td><td>0.898</td><td>0.874</td><td>29</td><td>0.956</td><td>0.909</td><td>0.933</td></tr>
+<tr><td style="white-space:nowrap">FTC-08</td><td>11</td><td>0.575</td><td>0.703</td><td>0.639</td><td>37</td><td>0.986</td><td>0.894</td><td>0.940</td></tr>
+<tr><td style="white-space:nowrap">FTC-09</td><td>5</td><td>0.995</td><td>0.928</td><td>0.962</td><td>80</td><td>0.997</td><td>0.936</td><td>0.966</td></tr>
+<tr><td style="white-space:nowrap">FTC-10</td><td>12</td><td>0.901</td><td>0.805</td><td>0.853</td><td>38</td><td>0.972</td><td>0.828</td><td>0.900</td></tr>
+<tr><td style="white-space:nowrap">FTC-11</td><td>2</td><td>0.979</td><td>0.714</td><td>0.847</td><td>2</td><td>0.995</td><td>0.899</td><td>0.947</td></tr>
+<tr><td><strong>Mean</strong></td><td></td><td><strong>0.839</strong></td><td>0.791</td><td><strong>0.815</strong></td><td></td><td><strong>0.977</strong> (9 parts)</td><td>0.877</td><td><strong>0.759</strong> (failures as 0)</td></tr>
+</tbody>
+</table></div>
+
+<p>Every number in the table comes from CADFather's metric code. IoU is the volume the two shapes share divided by the volume either occupies. GMS is its measure of how well the surfaces match. The score is the mean of the two, and an output whose mesh is not closed counts as a failure and scores zero.</p>
+
+<ul>
+<li>CADFather returned a valid closed solid for all eleven parts. Its mean IoU is 0.839, from 0.575 to 0.995.</li>
+<li>featuretree is higher on IoU on each of the nine parts where it gets a score, and averages 0.977 there.</li>
+<li>Two of featuretree's rebuilt solids, CTC-02 and CTC-05, do not turn into closed meshes, so under these rules they fail. With failures counted as zero, as CADFather's score does, CADFather is ahead overall: 0.815 against 0.759. Over the nine scored parts featuretree's mean score is 0.927.</li>
+<li>CADFather uses 2 to 12 operations per part. featuretree uses 2 to 144 features. A tree of 144 features is accurate, but it is a lot to edit.</li>
+</ul>
+
+<p><img loading="lazy" alt="Three NIST parts, each shown as the input in grey, CADFather's reconstruction in orange and featuretree's in blue. FTC-09, a flat plate with holes, is matched closely by both. On CTC-01 CADFather gets the outline and the main boss but squares off the rounded corners. On FTC-08, an open enclosure, CADFather returns a mostly solid block with a few holes." src="meshes.png" /></p>
+
+<p>The picture shows CADFather's best, median and worst part by its own IoU. On the flat plate both tools are near exact. On FTC-08 its twelve operations go to the outer shape and the large pocket in the middle is left filled.</p>
+
+<h2>What we found wrong with our own output</h2>
+
+<p>Scoring featuretree by someone else's rules turned up three defects that our own checks do not report.</p>
+
+<ul>
+<li>CTC-02 and CTC-05 rebuild as solids with the right volume, and the CAD kernel calls them valid, but meshing them leaves open edges at every tolerance we tried. A file like that will not print or simulate without repair. Our own measure, which samples points against the solid and never meshes it, gave these two 0.935 and 0.972.</li>
+<li>The CTC-04 solid contains 30 small enclosed voids that are not in the original. The metric code treats them as filled, which is why it reads 0.965 where our measure reads 0.990.</li>
+<li>CTC-03 comes back as five separate solids where the original is one.</li>
+</ul>
+
+<h2>How it was run</h2>
+
+<p>CADFather ran from its public repository with its own configuration: the same models, tools, budgets, limits and seed. The paper used four H100 GPUs. We rented one, so both models shared it and there was one copy of the assistant model where the paper has three. No part came near the time limit. The slowest took 504 seconds of an allowed 1,000, so we do not think the smaller machine changed the results. The eleven parts ran in parallel in about eight and a half minutes, after about eight minutes of loading models. The GPU time for the run and the failed attempts before it cost about three dollars.</p>
+
+<p>The meshes CADFather was given were made from the NIST STEP files at a tolerance of a thousandth of each part's size. featuretree's trees are the ones from our <a href="/blog/featuretree-nist-results/">September run</a>, rebuilt today, moved back into the original part's position and meshed the same way. They were not recognised again for this post.</p>
+
+<h2>What this does not show</h2>
+
+<ul>
+<li>It is eleven parts and one run of each tool. CADFather was run once with one seed.</li>
+<li>We have not run featuretree on DeepCAD or Fusion360, where CADFather's published results are. An earlier attempt of ours was invalid because of a library version problem, and we have not repeated it.</li>
+<li>featuretree had the exact solid as input. Given only a mesh it would not run at all. Our mesh-input tool handles round stepped parts only.</li>
+<li>Overlap says nothing about whether a tree is pleasant to edit. Neither set of trees was opened in a CAD program for this post.</li>
+<li>featuretree labels eight of these eleven recoveries PARTIAL by its own checks. Those labels are unchanged.</li>
+</ul>
+
+<h2>What's next</h2>
+
+<p>Fix the open meshes, the voids and the split solids, and add a closed-mesh test to our own checks. Run featuretree on the DeepCAD and Fusion360 test sets. Look at whether a short CADFather program is a useful starting point for the parts where our trees run long.</p>
+
+<h2>Who did what</h2>
+<p>We chose the comparison and asked for it to be scored one way for both. Claude set up the run and wrote the scoring. CADFather, its models and its metric code are the work of its authors.</p>
+
+<p>featuretree is at <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>. The scoring scripts for this post are not in the repository yet. Got a STEP file that should be an editable model? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

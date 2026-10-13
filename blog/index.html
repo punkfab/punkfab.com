@@ -24,6 +24,11 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
+      <span class="date">2026-10-12</span>
+      <a class="title" href="/blog/cadfather-nist/">CADFather on the NIST test parts, scored next to featuretree</a>
+      <p>We ran CADFather, a new open-source agent that rebuilds CAD programs from meshes, on the eleven NIST test parts we use for featuretree, and scored both tools' outputs with CADFather's own metric code. CADFather returned a valid solid for all eleven, at a mean overlap of 0.839. featuretree is at 0.977 on nine, and fails the metric's closed-mesh rule on the other two. The two tools start from different inputs and write very different amounts of tree.</p>
+    </li>
+    <li>
       <span class="date">2026-10-07</span>
       <a class="title" href="/blog/scan-to-cad-hexagon/">A scan-to-CAD test part, and when a hexagon is regular</a>
       <p>An article tested Backflip AI on a scanned flanged bushing and reported a hexagon with unequal flats. We ran the shared mesh through a small slicing tool of ours. The scan's flats measure 39.98, 40.10 and 40.03 mm; the tool decides that is one regular hexagon and writes a single 40 mm feature, in an eight-feature tree that overlaps the scan by 97.8%. It only handles round stepped parts, and the FreeCAD sketch is still six unconstrained lines.</p>
