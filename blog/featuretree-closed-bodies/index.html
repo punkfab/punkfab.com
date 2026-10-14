@@ -4,24 +4,24 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Fixing what the CADFather comparison found — PUNKFAB log</title>
-<meta name="description" content="Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.915. Three parts still have defects, which a new check now reports. Also: first results on samples of DeepCAD and Fusion360." />
+<meta name="description" content="Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.917. A new check now reports such defects; the last three parts it flagged were fixed a day later. Also: first results on samples of DeepCAD and Fusion360." />
 <link rel="canonical" href="https://punkfab.com/blog/featuretree-closed-bodies/" />
 <meta property="og:site_name" content="PUNKFAB" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://punkfab.com/blog/featuretree-closed-bodies/" />
 <meta property="og:title" content="Fixing what the CADFather comparison found" />
-<meta property="og:description" content="Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.915. Three parts still have defects, which a new check now reports. Also: first results on samples of DeepCAD and Fusion360." />
+<meta property="og:description" content="Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.917. A new check now reports such defects; the last three parts it flagged were fixed a day later. Also: first results on samples of DeepCAD and Fusion360." />
 <meta property="og:image" content="https://punkfab.com/blog/featuretree-closed-bodies/card.jpg" />
 <meta property="og:image:secure_url" content="https://punkfab.com/blog/featuretree-closed-bodies/card.jpg" />
 <meta property="og:image:type" content="image/jpeg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="627" />
-<meta property="og:image:alt" content="Chart of score per NIST part under CADFather's rules: CADFather, featuretree before the fixes and featuretree after. Two parts that scored zero before now score 0.778 and 0.920." />
+<meta property="og:image:alt" content="Chart of score per NIST part under CADFather's rules: CADFather, featuretree before the fixes and featuretree after. Two parts that scored zero before now score 0.776 and 0.922." />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Fixing what the CADFather comparison found" />
-<meta name="twitter:description" content="Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.915. Three parts still have defects, which a new check now reports. Also: first results on samples of DeepCAD and Fusion360." />
+<meta name="twitter:description" content="Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.917. A new check now reports such defects; the last three parts it flagged were fixed a day later. Also: first results on samples of DeepCAD and Fusion360." />
 <meta name="twitter:image" content="https://punkfab.com/blog/featuretree-closed-bodies/card.jpg" />
-<meta name="twitter:image:alt" content="Chart of score per NIST part under CADFather's rules: CADFather, featuretree before the fixes and featuretree after. Two parts that scored zero before now score 0.778 and 0.920." />
+<meta name="twitter:image:alt" content="Chart of score per NIST part under CADFather's rules: CADFather, featuretree before the fixes and featuretree after. Two parts that scored zero before now score 0.776 and 0.922." />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -57,37 +57,40 @@
 
 <h2>The NIST parts, scored again</h2>
 
-<p><img loading="lazy" alt="Dot chart of score per NIST part under CADFather's rules. CADFather in orange, featuretree before the fixes as hollow blue circles, featuretree after as filled blue. CTC-02 and CTC-05 move from zero to 0.778 and 0.920. The other parts move little. featuretree is above CADFather on ten of eleven parts; on FTC-06 CADFather is higher." src="score-before-after.png" /></p>
+<p><img loading="lazy" alt="Dot chart of score per NIST part under CADFather's rules. CADFather in orange, featuretree before the fixes as hollow blue circles, featuretree after as filled blue. CTC-02 and CTC-05 move from zero to 0.776 and 0.922. The other parts move little. featuretree is above CADFather on ten of eleven parts; on FTC-06 CADFather is higher." src="score-before-after.png" /></p>
 
 <div class="table-wrap"><table>
 <thead><tr><th>Part</th><th>Features</th><th>Solids</th><th>Voids</th><th>Mesh closed</th><th>IoU before</th><th>IoU now</th><th>Score now</th><th>CADFather score</th></tr></thead>
 <tbody>
 <tr><td style="white-space:nowrap">CTC-01</td><td>54</td><td>1</td><td>0</td><td>yes</td><td>0.999</td><td>0.999</td><td>0.981</td><td>0.768</td></tr>
-<tr><td style="white-space:nowrap">CTC-02</td><td>144</td><td>1</td><td><strong>16</strong></td><td>yes</td><td>failed</td><td>0.928</td><td>0.778</td><td>0.743</td></tr>
-<tr><td style="white-space:nowrap">CTC-03</td><td>64</td><td><strong>5</strong></td><td>0</td><td>yes</td><td>0.943</td><td>0.944</td><td>0.931</td><td>0.754</td></tr>
-<tr><td style="white-space:nowrap">CTC-04</td><td>108</td><td><strong>3</strong></td><td>0</td><td>yes</td><td>0.965</td><td>0.990</td><td>0.890</td><td>0.734</td></tr>
-<tr><td style="white-space:nowrap">CTC-05</td><td>57</td><td>1</td><td>0</td><td>yes</td><td>failed</td><td>0.979</td><td>0.920</td><td>0.889</td></tr>
+<tr><td style="white-space:nowrap">CTC-02</td><td>132</td><td>1</td><td>0</td><td>yes</td><td>failed</td><td>0.926</td><td>0.776</td><td>0.743</td></tr>
+<tr><td style="white-space:nowrap">CTC-03</td><td>144</td><td>1</td><td>0</td><td>yes</td><td>0.943</td><td>0.979</td><td>0.948</td><td>0.754</td></tr>
+<tr><td style="white-space:nowrap">CTC-04</td><td>214</td><td>1</td><td>0</td><td>yes</td><td>0.965</td><td>0.994</td><td>0.891</td><td>0.734</td></tr>
+<tr><td style="white-space:nowrap">CTC-05</td><td>59</td><td>1</td><td>0</td><td>yes</td><td>failed</td><td>0.981</td><td>0.922</td><td>0.889</td></tr>
 <tr><td style="white-space:nowrap">FTC-06</td><td>31</td><td>1</td><td>0</td><td>yes</td><td>0.980</td><td>0.980</td><td>0.877</td><td>0.904</td></tr>
 <tr><td style="white-space:nowrap">FTC-07</td><td>30</td><td>1</td><td>0</td><td>yes</td><td>0.956</td><td>0.957</td><td>0.933</td><td>0.874</td></tr>
 <tr><td style="white-space:nowrap">FTC-08</td><td>66</td><td>1</td><td>0</td><td>yes</td><td>0.986</td><td>0.985</td><td>0.941</td><td>0.639</td></tr>
 <tr><td style="white-space:nowrap">FTC-09</td><td>80</td><td>1</td><td>0</td><td>yes</td><td>0.997</td><td>0.997</td><td>0.966</td><td>0.962</td></tr>
 <tr><td style="white-space:nowrap">FTC-10</td><td>38</td><td>1</td><td>0</td><td>yes</td><td>0.972</td><td>0.972</td><td>0.900</td><td>0.853</td></tr>
 <tr><td style="white-space:nowrap">FTC-11</td><td>2</td><td>1</td><td>0</td><td>yes</td><td>0.995</td><td>0.995</td><td>0.947</td><td>0.847</td></tr>
-<tr><td><strong>Mean</strong></td><td></td><td></td><td></td><td>11 / 11</td><td>0.977 (9 parts)</td><td><strong>0.975</strong></td><td><strong>0.915</strong></td><td>0.815</td></tr>
+<tr><td><strong>Mean</strong></td><td></td><td></td><td></td><td>11 / 11</td><td>0.977 (9 parts)</td><td><strong>0.979</strong></td><td><strong>0.917</strong></td><td>0.815</td></tr>
 </tbody>
 </table></div>
 
-<p>All eleven outputs are now valid under CADFather's rules, where nine were. With failures counted as zero, featuretree's mean score goes from 0.759 to 0.915. CADFather's is 0.815, from the same run as yesterday. The caveats from that post stand: CADFather starts from a mesh and writes at most twelve operations, and featuretree starts from the exact solid and writes up to 144 features.</p>
+<p>All eleven outputs are now valid under CADFather's rules, where nine were, and every one is a single closed body. With failures counted as zero, featuretree's mean score goes from 0.759 to 0.917. CADFather's is 0.815, from the same run as yesterday. The caveats from that post stand: CADFather starts from a mesh and writes at most twelve operations, and featuretree starts from the exact solid and writes up to 214 features.</p>
 
-<h2>Still wrong</h2>
+<p><em>Updated 2026-10-14. The table and chart first showed three parts with defects; they now include the fixes in the next section.</em></p>
 
-<p>Three parts are not one clean body. We looked at each and did not find a general fix, so they are left as they are. The new check reports all three, and none of them is VERIFIED.</p>
+<h2>The last three, fixed a day later</h2>
+
+<p>When this post went up, three parts were not one clean body: CTC-02 held 16 sealed hole segments, CTC-03 rebuilt as five solids and CTC-04 had two feet detached from the body. We had not found a general fix. A day later we had, for all three, and the check now passes on all eleven parts. No verdict changed: the three are still PARTIAL by our other checks.</p>
 
 <ul>
-<li><strong>CTC-03 rebuilds as five solids.</strong> It is a sheet-metal part with walls under 2 mm thick, sliced into 31 layers across its bends. Some layers do not connect to their neighbours.</li>
-<li><strong>CTC-04 has two feet detached from the body.</strong> The layer between them and the body came out without those two regions, and we have not found why.</li>
-<li><strong>CTC-02 holds 16 sealed hole segments.</strong> Some bolt holes are found in the layers above and below a layer but not in it. CADFather's metric treats such voids as filled, which is part of why this part scores as well as it does.</li>
+<li><strong>CTC-02: holes taken for islands.</strong> To decide which loops in a section are holes, the slicer traces a polygon around the outline and tests points against it. It traced only the start and middle of each edge. This part's outline is two spline curves, so the polygon was a quadrilateral, and six of its ten bolt holes fell outside it. Those layers were built solid over the holes. Curved edges are now traced at eight points each. This was a slicer bug, not a limit of the method. CADFather's metric treats sealed voids as filled, so the score hardly moves.</li>
+<li><strong>CTC-03 and CTC-04: curves that cross the slicing direction.</strong> CTC-03 is bent sheet, and its bends run across the direction the part is sliced in. CTC-04 has a lug tilted 22°, with holes on the same tilt. One layer with one outline cannot follow such a face, and where it fell short the stack came apart. When a rebuild now comes out in more pieces than its input, recognition runs again with 1 mm layers across the curved faces at the heights where it split. Overlap rises from 0.944 to 0.979 on CTC-03 and from 0.990 to 0.994 on CTC-04.</li>
 </ul>
+
+<p>The second fix is an approximation. Those bends are now 1 mm staircases, not curves, and the recogniser says so in its report for each part. It also adds a lot of features: CTC-03 goes from 64 to 144 and CTC-04 from 108 to 214. That is a long tree for a person to edit. A true bend feature would fix both, but every backend would need to support it.</p>
 
 <h2>Files with more than one body</h2>
 
@@ -132,7 +135,7 @@
 
 <h2>What's next</h2>
 
-<p>The three parts that are still in pieces or hollow. Recovering every body of a multi-body file. The full DeepCAD and Fusion360 sets, scored with CADFather's code as well as ours.</p>
+<p>Bends as features rather than staircases. Recovering every body of a multi-body file. The full DeepCAD and Fusion360 sets, scored with CADFather's code as well as ours.</p>
 
 <h2>Who did what</h2>
 <p>We asked for the defects to be fixed and for the open items from the first post to be run. Claude found the causes, wrote the fixes and the check, and ran the evaluations. The defects were found with CADFather's metric code, which is its authors' work.</p>
