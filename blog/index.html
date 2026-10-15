@@ -24,6 +24,11 @@
   <p class="meta">Code-defined assemblies, simulation sweeps, and what the checks caught.</p>
   <ul class="postlist">
     <li>
+      <span class="date">2026-10-15</span>
+      <a class="title" href="/blog/featuretree-benchcad/">featuretree on the BenchCAD 2.0 parts</a>
+      <p>BenchCAD 2.0 scores models that write CAD from drawings, renders and parts. featuretree does none of those tasks, so we gave it the 522 distinct parts in BenchCAD's public set and scored the rebuilt trees with BenchCAD's own scorer. The median is 0.991. The 270 trees featuretree marks VERIFIED have a median of 1.000, and 39 of the 40 parts under 0.25 are marked PARTIAL or got no tree. The scorer also found eight VERIFIED trees with the wrong number of through-holes.</p>
+    </li>
+    <li>
       <span class="date">2026-10-13</span>
       <a class="title" href="/blog/featuretree-closed-bodies/">Fixing what the CADFather comparison found</a>
       <p>Scoring featuretree with another project's rules found solids that would not mesh closed, sealed voids and split bodies. The causes were holes cut a few hundredths of a micron short and faces a tenth of a micron wide. With those fixed, all eleven NIST outputs are valid under CADFather's rules and the mean score goes from 0.759 to 0.917. A new check now reports such defects; the last three parts it flagged were fixed a day later. Also: first results on samples of DeepCAD and Fusion360.</p>

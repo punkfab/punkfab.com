@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>featuretree on the BenchCAD 2.0 parts — PUNKFAB log</title>
+<meta name="description" content="BenchCAD 2.0 scores models that write CAD from drawings, renders and parts. featuretree does none of those tasks, so we gave it the 522 distinct parts in BenchCAD's public set and scored the rebuilt trees with BenchCAD's own scorer. The median is 0.991. The 270 trees featuretree marks VERIFIED have a median of 1.000, and 39 of the 40 parts under 0.25 are marked PARTIAL or got no tree. The scorer also found eight VERIFIED trees with the wrong number of through-holes." />
+<link rel="canonical" href="https://punkfab.com/blog/featuretree-benchcad/" />
+<meta property="og:site_name" content="PUNKFAB" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://punkfab.com/blog/featuretree-benchcad/" />
+<meta property="og:title" content="featuretree on the BenchCAD 2.0 parts" />
+<meta property="og:description" content="BenchCAD 2.0 scores models that write CAD from drawings, renders and parts. featuretree does none of those tasks, so we gave it the 522 distinct parts in BenchCAD's public set and scored the rebuilt trees with BenchCAD's own scorer. The median is 0.991. The 270 trees featuretree marks VERIFIED have a median of 1.000, and 39 of the 40 parts under 0.25 are marked PARTIAL or got no tree. The scorer also found eight VERIFIED trees with the wrong number of through-holes." />
+<meta property="og:image" content="https://punkfab.com/blog/featuretree-benchcad/card.jpg" />
+<meta property="og:image:secure_url" content="https://punkfab.com/blog/featuretree-benchcad/card.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="627" />
+<meta property="og:image:alt" content="Two sorted dot charts of BenchCAD's part score for 522 parts rebuilt by featuretree. Left, the 270 VERIFIED trees: nearly all at 1.0, a handful lower. Right, the 252 PARTIAL trees or parts with no tree: spread from 0 to 1, median 0.9." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="featuretree on the BenchCAD 2.0 parts" />
+<meta name="twitter:description" content="BenchCAD 2.0 scores models that write CAD from drawings, renders and parts. featuretree does none of those tasks, so we gave it the 522 distinct parts in BenchCAD's public set and scored the rebuilt trees with BenchCAD's own scorer. The median is 0.991. The 270 trees featuretree marks VERIFIED have a median of 1.000, and 39 of the 40 parts under 0.25 are marked PARTIAL or got no tree. The scorer also found eight VERIFIED trees with the wrong number of through-holes." />
+<meta name="twitter:image" content="https://punkfab.com/blog/featuretree-benchcad/card.jpg" />
+<meta name="twitter:image:alt" content="Two sorted dot charts of BenchCAD's part score for 522 parts rebuilt by featuretree. Left, the 270 VERIFIED trees: nearly all at 1.0, a handful lower. Right, the 252 PARTIAL trees or parts with no tree: spread from 0 to 1, median 0.9." />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/blog/blog.css" />
+</head>
+<body>
+<nav>
+  <a class="brand" href="/">PUNK<b>FAB</b></a>
+  <div class="nav-links"><a href="/blog/">log</a><a href="/#contact">start a project →</a></div>
+</nav>
+<main>
+  <p class="eyebrow">benchmark · featuretree</p>
+  <h1>featuretree on the BenchCAD 2.0 parts</h1>
+  <p class="meta">2026-10-15 · <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a> (MIT) · follows <a href="/blog/featuretree-closed-bodies/">Fixing what the CADFather comparison found</a></p>
+  <article class="post">
+
+<p><a href="https://github.com/BenchCAD-org/benchcad-2-main">BenchCAD 2.0</a> is a benchmark for models that build CAD. The model gets a part drawing, rendered views, or parts and an assembly drawing, writes a CadQuery program, and is scored on the geometry that program produces. The scoring is deterministic and the code is public.</p>
+
+<p>featuretree does not do any of those tasks. It starts from an exact STEP solid and recovers an editable feature tree for it. So we did what we did with the NIST parts: we gave featuretree the reference parts themselves, rebuilt each recovered tree, and scored the rebuild with BenchCAD's own part scorer. This measures how faithfully featuretree turns a finished part back into a tree. It is not a BenchCAD result and should not be compared with the leaderboard: there, the model never sees the answer, and here the answer is the input.</p>
+
+<h2>What we ran</h2>
+
+<p>BenchCAD's public set has 91 cases across its five part and assembly tasks. From those we took every STEP file that holds one part: the reference parts of the drawing and render cases, the parts a model has to model in the assembly cases, and the parts the assembly cases supply. That is 582 files. Some parts appear in more than one case; BenchCAD tags each part with a pose-independent geometry hash, and with repeats removed 522 distinct parts remain. Whole assemblies were left out: featuretree recovers one body.</p>
+
+<p>The score is BenchCAD's <code>part_v1</code>, run unmodified in BenchCAD's own environment. It is 0.8 times a voxel overlap, corrected for what a plain box, sphere or cylinder of the same size would already get, plus 0.2 times a topology term that compares counts of pieces, through-holes and sealed voids. For the render task the pose counts, so we placed each rebuild back in the input's frame with the recogniser's own exact transform rather than searching for the best rotation. For every render part, BenchCAD's overlap in that pose tracks featuretree's own measure to within a few points, so the placement is not what costs points.</p>
+
+<p>We first ran the nine sample cases in BenchCAD's repository: 71 distinct parts, median 0.989, mean 0.872. Every one of those parts turned out to be in the public set, so the results below include them.</p>
+
+<h2>Results</h2>
+
+<p><img loading="lazy" alt="Two dot charts of BenchCAD's part score, each sorted from lowest to highest. Left, the 270 trees featuretree marks VERIFIED: all but about twenty sit at or within a hair of 1.0; the lowest few range from 0.008 to 0.77. Right, the 252 parts whose tree is PARTIAL or that got no tree: eight sit at 0, a cluster sits at exactly 0.2, and the rest rise steadily to a median of 0.9." src="scores.png" /></p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>Parts</th><th>Count</th><th>VERIFIED</th><th>Identical by BenchCAD's rule</th><th>Mean score</th><th>Median</th></tr></thead>
+<tbody>
+<tr><td>Drawing references (T1)</td><td>21</td><td>1</td><td>0</td><td>0.712</td><td>0.900</td></tr>
+<tr><td>Render references (T3)</td><td>23</td><td>4</td><td>4</td><td>0.632</td><td>0.757</td></tr>
+<tr><td>Parts a model must build (T4, T5)</td><td>178</td><td>94</td><td>66</td><td>0.893</td><td>0.993</td></tr>
+<tr><td>Supplied parts (T2, T5)</td><td>300</td><td>171</td><td>89</td><td>0.890</td><td>0.994</td></tr>
+<tr><td><strong>All</strong></td><td><strong>522</strong></td><td><strong>270</strong></td><td><strong>159</strong></td><td><strong>0.872</strong></td><td><strong>0.991</strong></td></tr>
+</tbody>
+</table></div>
+
+<p>350 of the 522 parts score 0.95 or more. The 270 trees featuretree marks VERIFIED have a median of 1.000 and a mean of 0.985, and 159 of them pass BenchCAD's identity rule, which treats a rebuild whose surface matches the reference to within re-meshing noise as the reference itself. The 244 PARTIAL trees have a median of 0.915: 123 of them overlap the original by 97% or more and were held back by our stricter thresholds. Eight parts got no tree. Trees have a median of 10 features and at most 340. The median part took 29 seconds.</p>
+
+<p>The drawing and render references are where featuretree does worst. Only five of the 44 are VERIFIED, and they account for 10 of the 40 parts under 0.25.</p>
+
+<h2>What the scorer found that our checks did not</h2>
+
+<p>Eight of the 270 VERIFIED trees have a different number of through-holes from the part. One leaves out four holes that together change the volume by 0.16%; another has three the part does not have. featuretree's closed-body check confirms a rebuild is one closed solid with no sealed voids, but it does not count through-holes. BenchCAD's topology term does. We saw one such tree in the sample run; on the full set it is eight, which is 3% of what we call VERIFIED. Counting through-holes is a small addition to the same check, and it would have made all eight PARTIAL.</p>
+
+<h2>The failures</h2>
+
+<p>40 parts score under 0.25. featuretree marks 39 of them PARTIAL or produced no tree for them, so they would not have been passed off as a correct tree. The one VERIFIED part among them is the four-missing-holes tree above.</p>
+
+<ul>
+<li>Eight parts got no tree: six did not finish within the 25-minute limit, and the recogniser rejected two as neither an extrusion nor a body of revolution.</li>
+<li>Six files hold more than one solid. featuretree recovers the largest and says so, and the score is against the whole file.</li>
+<li>Three are coil springs. A helix is not a stack of extrudes and revolves.</li>
+<li>Four overlap the original by 94% or more and still score 0.2 or less, because a plain cylinder of the same size overlaps it just as well, so the corrected overlap term is zero. That is the scorer's chance correction working as designed on near-cylindrical parts. One of the four is the VERIFIED tree with missing holes, which loses the topology term as well. The same correction takes points off several VERIFIED trees higher up the chart.</li>
+<li>The other 19 are trees that capture only part of the shape: freeform and spline faces, cones and cylinders on several axes, and features the layered recogniser splits into separate pieces. Seven of the 19 are drawing or render references. We have not yet gone through each one.</li>
+</ul>
+
+<h2>What this does not show</h2>
+
+<ul>
+<li>It is not a BenchCAD score. featuretree was given the reference geometry, which no entry on the leaderboard gets.</li>
+<li>The 100-case Core set is available under a separate agreement. We have not run it.</li>
+<li>One run, with the build123d backend only. Nothing was opened in a CAD program.</li>
+<li>BenchCAD's terms allow publishing results but not the cases, so we do not republish any part or pictures of one.</li>
+</ul>
+
+<h2>What's next</h2>
+
+<p>Counting through-holes in the closed-body check, then rerunning the eight. A look at the 19 partial recoveries above. Parts with freeform faces and helices, which are still out of reach of a tree of extrudes and revolves.</p>
+
+<h2>Who did what</h2>
+<p>We asked for featuretree to be tested against BenchCAD 2.0. Claude set up the scorer, ran the recoveries and wrote this post. BenchCAD 2.0, its cases and its scorer are the work of its authors.</p>
+
+<p>featuretree is at <a href="https://github.com/punkfab/featuretree">punkfab/featuretree</a>. Got a STEP file that should be an editable model? <a href="/#contact">Start a project →</a></p>
+  </article>
+</main>
+<footer>
+  <span>PUNK<b style="color:var(--magenta)">FAB</b> · manufacturing for design</span>
+  <span>define · sweep · verify · build</span>
+</footer>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bde318623baa45a8a08f1a8425893852"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
